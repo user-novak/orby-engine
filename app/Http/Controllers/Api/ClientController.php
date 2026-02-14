@@ -41,7 +41,7 @@ class ClientController extends Controller
     {
         $validated = $request->validate([
             'clients' => 'required|array|min:1',
-            'clients.*.dni' => 'required|string|distinct|unique:clients,dni',
+            'clients.*.dni' => 'nullable|string|distinct',
             'clients.*.name' => 'required|string',
             'clients.*.ruc' => 'nullable|string',
             'clients.*.phone' => 'nullable|string',
