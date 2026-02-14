@@ -35,6 +35,28 @@ class ClientController extends Controller
     }
 
     /**
+     * Store masive resource in storage.
+     */
+    public function bulkStore(Request $request)
+    {
+        $validated = $request->validate([
+            'clients' => 'required|array|min:1',
+            'clients.*.dni' => 'required|string|distinct|unique:clients,dni',
+            'clients.*.name' => 'required|string',
+            'clients.*.ruc' => 'nullable|string',
+            'clients.*.phone' => 'nullable|string',
+            'clients.*.address' => 'nullable|string',
+        ]);
+
+        $clients = Client::insert($validated['clients']);
+
+        return response()->json([
+            'message' => 'Clientes registrados correctamente'
+        ], 201);
+    }
+
+
+    /**
      * Display the specified resource.
      */
     public function show(Client $client)
