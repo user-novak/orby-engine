@@ -6,16 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Http\Requests\BulkStoreClientRequest;
+use App\Traits\ApiResponse;
 use App\Models\Client;
 
 class ClientController extends Controller
 {
+
+    use ApiResponse;
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return response()->json(Client::all());
+        return $this->success(
+            Client::all(),
+            'Clientes obtenidos correctamente'
+        );
     }
 
     /**
@@ -25,7 +32,11 @@ class ClientController extends Controller
     {
         $client = Client::create($request->validated());
 
-        return response()->json($client, 201);
+        return $this->success(
+            $client,
+            'Cliente registrado correctamente',
+            201
+        );
     }
 
     /**
@@ -35,9 +46,11 @@ class ClientController extends Controller
     {
         Client::insert($request->validated()['clients']);
 
-        return response()->json([
-            'message' => 'Clientes registrados correctamente'
-        ], 201);
+        return $this->success(
+            null,
+            'Clientes registrados correctamente',
+            201
+        );
     }
 
     /**
@@ -45,7 +58,10 @@ class ClientController extends Controller
      */
     public function show(Client $client)
     {
-        return response()->json($client);
+        return $this->success(
+            $client,
+            'Cliente obtenido correctamente'
+        );
     }
 
     /**
@@ -55,7 +71,10 @@ class ClientController extends Controller
     {
         $client->update($request->validated());
 
-        return response()->json($client);
+        return $this->success(
+            $client,
+            'Cliente actualizado correctamente'
+        );
     }
 
     /**
@@ -65,6 +84,10 @@ class ClientController extends Controller
     {
         $client->delete();
 
-        return response()->json(null, 204);
+        return $this->success(
+            null,
+            'Cliente eliminado correctamente',
+            204
+        );
     }
 }
