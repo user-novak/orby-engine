@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreAccountRequest;
-use App\Http\Requests\UpdateAccountRequest;
-use App\Http\Requests\BulkStoreAccountRequest;
+use App\Http\Requests\Account\StoreAccountRequest;
+use App\Http\Requests\Account\UpdateAccountRequest;
+use App\Http\Requests\Account\BulkStoreAccountRequest;
 use App\Traits\ApiResponse;
 use App\Models\Account;
 

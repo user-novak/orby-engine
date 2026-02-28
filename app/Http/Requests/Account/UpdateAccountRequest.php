@@ -1,11 +1,10 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Account;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class StoreClientRequest extends FormRequest
+class UpdateAccountRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,15 +22,10 @@ class StoreClientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'dni' => [
-                'nullable',
-                'string',
-                Rule::unique('clients', 'dni')->whereNotNull('dni')
-            ],
-            'name' => ['required', 'string'],
-            'ruc' => ['nullable', 'string'],
-            'phone' => ['nullable', 'string'],
-            'address' => ['nullable', 'string'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'amount' => ['sometimes', 'required', 'numeric'],
+            'account_number' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
         ];
     }
 }

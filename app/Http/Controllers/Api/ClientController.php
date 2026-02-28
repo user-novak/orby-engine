@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreClientRequest;
-use App\Http\Requests\UpdateClientRequest;
-use App\Http\Requests\BulkStoreClientRequest;
+use App\Http\Requests\Client\StoreClientRequest;
+use App\Http\Requests\Client\UpdateClientRequest;
+use App\Http\Requests\Client\BulkStoreClientRequest;
 use App\Traits\ApiResponse;
 use App\Models\Client;
 
