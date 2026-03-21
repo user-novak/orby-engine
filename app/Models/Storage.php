@@ -21,4 +21,9 @@ class Storage extends Model
         'output',
         'stock',
     ];
+
+    public function billerItems()
+    {
+        return $this->hasMany(BillerItem::class);
+    }
 }
