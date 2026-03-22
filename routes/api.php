@@ -16,4 +16,5 @@ Route::apiResource('storages', StorageController::class);
 Route::post('storages/bulk', [StorageController::class, 'bulkStore']);
 
 Route::get('biller/data', [BillerController::class, 'index']);
+Route::get('biller/sales', [BillerController::class, 'sales']);
 Route::post('biller', [BillerController::class, 'store']);

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Biller;
 use App\Models\BillerItem;
 use App\Models\BillerPayment;
+use Illuminate\Http\Request;
 
 class BillerController extends Controller
 {
@@ -148,6 +149,81 @@ class BillerController extends Controller
 
             return $this->error(
                 'Error al registrar la venta',
+                500,
+                $e->getMessage()
+            );
+        }
+    }
+
+    public function sales(Request $request)
+    {
+        try {
+
+            $query = Biller::query()
+                ->with([
+                    'client:id,name',
+                    'account:id,name',
+                    'items.storage:id,description'
+                ]);
+
+            if ($request->filled('date_from') && $request->filled('date_to')) {
+                $query->whereBetween('sale_date', [
+                    $request->date_from,
+                    $request->date_to
+                ]);
+            }
+
+            if ($request->filled('client_id')) {
+                $query->where('client_id', $request->client_id);
+            }
+
+            if ($request->filled('account_id')) {
+                $query->where('account_id', $request->account_id);
+            }
+
+            if ($request->filled('storage_id')) {
+                $query->whereHas('items', function ($q) use ($request) {
+                    $q->where('storage_id', $request->storage_id);
+                });
+            }
+
+            if ($request->filled('sale_type')) {
+                $query->where('sale_type', $request->sale_type);
+            }
+
+            if ($request->filled('status')) {
+
+                if ($request->status === 'pending') {
+
+                    $query->where(function ($q) {
+                        $q->where('sale_type', SaleType::CREDIT->value)
+                            ->whereNull('payment_date');
+                    });
+                }
+
+                if ($request->status === 'paid') {
+
+                    $query->where(function ($q) {
+                        $q->where('sale_type', SaleType::CASH->value)
+                            ->orWhereNotNull('payment_date');
+                    });
+                }
+            }
+
+            $query->orderBy('sale_date', 'desc');
+
+            $perPage = $request->get('per_page', 20);
+
+            $sales = $query->paginate($perPage);
+
+            return $this->success(
+                $sales,
+                'Ventas obtenidas correctamente'
+            );
+        } catch (\Throwable $e) {
+
+            return $this->error(
+                'Error al obtener las ventas',
                 500,
                 $e->getMessage()
             );
