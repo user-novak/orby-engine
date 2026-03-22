@@ -133,7 +133,7 @@ class BillerController extends Controller
             if ($data['sale_type'] === SaleType::CASH->value) {
 
                 $account = Account::findOrFail($data['account_id']);
-                $account->increment('balance', $total);
+                $account->increment('amount', $total);
             }
 
             DB::commit();
