@@ -54,9 +54,26 @@ class BillerController extends Controller
 
             DB::beginTransaction();
 
-            foreach ($data['items'] as $item) {
+            $items = collect($data['items']);
 
-                $storage = Storage::findOrFail($item['storage_id']);
+            $storages = Storage::whereIn('id', $items->pluck('storage_id'))
+                ->get()
+                ->keyBy('id');
+
+            $subtotal = 0;
+
+            foreach ($items as $item) {
+
+                $storage = $storages->get($item['storage_id']);
+
+                if (!$storage) {
+                    DB::rollBack();
+
+                    return $this->error(
+                        "Producto no encontrado: {$item['storage_id']}",
+                        404
+                    );
+                }
 
                 if ($storage->stock < $item['quantity']) {
                     DB::rollBack();
@@ -66,30 +83,37 @@ class BillerController extends Controller
                         400
                     );
                 }
+
+                $subtotal += $item['quantity'] * $item['unit_price'];
             }
+
+            $igv = $data['igv'];
+            $total = $subtotal + $igv;
 
             $biller = Biller::create([
                 'sale_date' => $data['sale_date'],
                 'payment_date' => $data['payment_date'] ?? null,
                 'place' => $data['place'] ?? null,
                 'sale_type' => $data['sale_type'],
-                'subtotal' => $data['subtotal'],
-                'igv' => $data['igv'],
-                'total' => $data['total'],
+                'subtotal' => $subtotal,
+                'igv' => $igv,
+                'total' => $total,
                 'client_id' => $data['client_id'],
                 'account_id' => $data['account_id'],
             ]);
 
-            foreach ($data['items'] as $item) {
+            foreach ($items as $item) {
 
-                $storage = Storage::findOrFail($item['storage_id']);
+                $storage = $storages->get($item['storage_id']);
+
+                $itemSubtotal = $item['quantity'] * $item['unit_price'];
 
                 BillerItem::create([
                     'biller_id' => $biller->id,
                     'storage_id' => $storage->id,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'subtotal' => $item['subtotal'],
+                    'subtotal' => $itemSubtotal,
                 ]);
 
                 $storage->decrement('stock', $item['quantity']);
@@ -101,7 +125,7 @@ class BillerController extends Controller
                 BillerPayment::create([
                     'biller_id' => $biller->id,
                     'client_id' => $data['client_id'],
-                    'amount' => $data['total'],
+                    'amount' => $total,
                     'payment_date' => $data['payment_date'],
                 ]);
             }
@@ -109,8 +133,7 @@ class BillerController extends Controller
             if ($data['sale_type'] === SaleType::CASH->value) {
 
                 $account = Account::findOrFail($data['account_id']);
-
-                $account->increment('balance', $data['total']);
+                $account->increment('balance', $total);
             }
 
             DB::commit();
