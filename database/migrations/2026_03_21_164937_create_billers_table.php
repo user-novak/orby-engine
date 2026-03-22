@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('billers', function (Blueprint $table) {
             $table->id();
             $table->dateTime('sale_date');
+            $table->dateTime('payment_date')->nullable();
             $table->string('place')->nullable();
             $table->enum('sale_type', ['ACO', 'ACR']);
             $table->decimal('subtotal', 12, 2);

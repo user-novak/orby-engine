@@ -11,6 +11,7 @@ class Biller extends Model
 
     protected $fillable = [
         'sale_date',
+        'payment_date',
         'place',
         'sale_type',
         'subtotal',
@@ -33,5 +34,10 @@ class Biller extends Model
     public function items()
     {
         return $this->hasMany(BillerItem::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(BillerPayment::class);
     }
 }

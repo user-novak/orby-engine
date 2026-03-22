@@ -13,6 +13,7 @@ use App\Http\Requests\Biller\BillerRequest;
 use Illuminate\Support\Facades\DB;
 use App\Models\Biller;
 use App\Models\BillerItem;
+use App\Models\BillerPayment;
 
 class BillerController extends Controller
 {
@@ -69,6 +70,7 @@ class BillerController extends Controller
 
             $biller = Biller::create([
                 'sale_date' => $data['sale_date'],
+                'payment_date' => $data['payment_date'] ?? null,
                 'place' => $data['place'] ?? null,
                 'sale_type' => $data['sale_type'],
                 'subtotal' => $data['subtotal'],
@@ -92,6 +94,16 @@ class BillerController extends Controller
 
                 $storage->decrement('stock', $item['quantity']);
                 $storage->increment('output', $item['quantity']);
+            }
+
+            if ($data['sale_type'] === SaleType::CREDIT->value) {
+
+                BillerPayment::create([
+                    'biller_id' => $biller->id,
+                    'client_id' => $data['client_id'],
+                    'amount' => $data['total'],
+                    'payment_date' => $data['payment_date'],
+                ]);
             }
 
             if ($data['sale_type'] === SaleType::CASH->value) {
