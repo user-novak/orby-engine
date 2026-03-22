@@ -27,7 +27,9 @@ class BillerRequest extends FormRequest
             'sale_type' => ['required', 'in:ACO,ACR'],
             'client_id' => ['required', 'exists:clients,id'],
             'account_id' => ['required', 'exists:accounts,id'],
-
+            'subtotal' => ['required', 'numeric', 'min:0'],
+            'igv' => ['required', 'numeric', 'min:0'],
+            'total' => ['required', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.storage_id' => ['required', 'exists:storages,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],

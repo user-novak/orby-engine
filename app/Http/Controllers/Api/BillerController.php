@@ -49,33 +49,31 @@ class BillerController extends Controller
     {
         $data = $request->validated();
 
-        return DB::transaction(function () use ($data) {
+        try {
 
-            $subtotal = 0;
+            DB::beginTransaction();
 
             foreach ($data['items'] as $item) {
 
                 $storage = Storage::findOrFail($item['storage_id']);
 
                 if ($storage->stock < $item['quantity']) {
+                    DB::rollBack();
+
                     return $this->error(
-                        "Stock insuficiente para {$storage->description}"
+                        "Stock insuficiente para {$storage->description}",
+                        400
                     );
                 }
-
-                $subtotal += $item['quantity'] * $item['unit_price'];
             }
-
-            $igv = $subtotal * 0.18;
-            $total = $subtotal + $igv;
 
             $biller = Biller::create([
                 'sale_date' => $data['sale_date'],
                 'place' => $data['place'] ?? null,
                 'sale_type' => $data['sale_type'],
-                'subtotal' => $subtotal,
-                'igv' => $igv,
-                'total' => $total,
+                'subtotal' => $data['subtotal'],
+                'igv' => $data['igv'],
+                'total' => $data['total'],
                 'client_id' => $data['client_id'],
                 'account_id' => $data['account_id'],
             ]);
@@ -84,14 +82,12 @@ class BillerController extends Controller
 
                 $storage = Storage::findOrFail($item['storage_id']);
 
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-
                 BillerItem::create([
                     'biller_id' => $biller->id,
                     'storage_id' => $storage->id,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'subtotal' => $itemSubtotal,
+                    'subtotal' => $item['subtotal'],
                 ]);
 
                 $storage->decrement('stock', $item['quantity']);
@@ -102,13 +98,24 @@ class BillerController extends Controller
 
                 $account = Account::findOrFail($data['account_id']);
 
-                $account->increment('balance', $total);
+                $account->increment('balance', $data['total']);
             }
 
+            DB::commit();
+
             return $this->success(
-                $biller->load('items'),
+                $biller->load('items.storage'),
                 'Venta registrada correctamente'
             );
-        });
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            return $this->error(
+                'Error al registrar la venta',
+                500,
+                $e->getMessage()
+            );
+        }
     }
 }
