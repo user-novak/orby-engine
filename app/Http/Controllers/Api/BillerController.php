@@ -8,17 +8,19 @@ use App\Models\Client;
 use App\Models\Storage;
 use App\Models\Account;
 use App\Traits\ApiResponse;
-use App\Enums\SaleType;
 use App\Http\Requests\Biller\BillerRequest;
-use Illuminate\Support\Facades\DB;
-use App\Models\Biller;
-use App\Models\BillerItem;
-use App\Models\BillerPayment;
 use Illuminate\Http\Request;
+use App\Services\Biller\CreateSaleService;
+use App\Services\Biller\GetSalesService;
 
 class BillerController extends Controller
 {
     use ApiResponse;
+
+    public function __construct(
+        protected CreateSaleService $createSaleService,
+        protected GetSalesService $getSalesService
+    ) {}
 
     public function index()
     {
@@ -49,103 +51,19 @@ class BillerController extends Controller
 
     public function store(BillerRequest $request)
     {
-        $data = $request->validated();
-
         try {
 
-            DB::beginTransaction();
-
-            $items = collect($data['items']);
-
-            $storages = Storage::whereIn('id', $items->pluck('storage_id'))
-                ->get()
-                ->keyBy('id');
-
-            $subtotal = 0;
-
-            foreach ($items as $item) {
-
-                $storage = $storages->get($item['storage_id']);
-
-                if (!$storage) {
-                    DB::rollBack();
-
-                    return $this->error(
-                        "Producto no encontrado: {$item['storage_id']}",
-                        404
-                    );
-                }
-
-                if ($storage->stock < $item['quantity']) {
-                    DB::rollBack();
-
-                    return $this->error(
-                        "Stock insuficiente para {$storage->description}",
-                        400
-                    );
-                }
-
-                $subtotal += $item['quantity'] * $item['unit_price'];
-            }
-
-            $igv = $data['igv'];
-            $total = $subtotal + $igv;
-
-            $biller = Biller::create([
-                'sale_date' => $data['sale_date'],
-                'payment_date' => $data['payment_date'] ?? null,
-                'place' => $data['place'] ?? null,
-                'sale_type' => $data['sale_type'],
-                'subtotal' => $subtotal,
-                'igv' => $igv,
-                'total' => $total,
-                'client_id' => $data['client_id'],
-                'account_id' => $data['account_id'],
-            ]);
-
-            foreach ($items as $item) {
-
-                $storage = $storages->get($item['storage_id']);
-
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
-
-                BillerItem::create([
-                    'biller_id' => $biller->id,
-                    'storage_id' => $storage->id,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'subtotal' => $itemSubtotal,
-                ]);
-
-                $storage->decrement('stock', $item['quantity']);
-                $storage->increment('output', $item['quantity']);
-            }
-
-            if ($data['sale_type'] === SaleType::CREDIT->value) {
-
-                BillerPayment::create([
-                    'biller_id' => $biller->id,
-                    'client_id' => $data['client_id'],
-                    'amount' => $total,
-                    'payment_date' => $data['payment_date'],
-                ]);
-            }
-
-            if ($data['sale_type'] === SaleType::CASH->value) {
-
-                $account = Account::findOrFail($data['account_id']);
-                $account->increment('amount', $total);
-            }
-
-            DB::commit();
+            $sale = $this->createSaleService->execute(
+                $request->validated()
+            );
 
             return $this->success(
-                $biller->load('items.storage'),
+                new BillerResource($sale),
                 'Venta registrada correctamente'
             );
+        } catch (\DomainException $e) {
+            return $this->error($e->getMessage(), 400);
         } catch (\Throwable $e) {
-
-            DB::rollBack();
 
             return $this->error(
                 'Error al registrar la venta',
@@ -159,62 +77,7 @@ class BillerController extends Controller
     {
         try {
 
-            $query = Biller::query()
-                ->with([
-                    'client:id,name',
-                    'account:id,name',
-                    'items.storage:id,description'
-                ]);
-
-            if ($request->filled('date_from') && $request->filled('date_to')) {
-                $query->whereBetween('sale_date', [
-                    $request->date_from,
-                    $request->date_to
-                ]);
-            }
-
-            if ($request->filled('client_id')) {
-                $query->where('client_id', $request->client_id);
-            }
-
-            if ($request->filled('account_id')) {
-                $query->where('account_id', $request->account_id);
-            }
-
-            if ($request->filled('storage_id')) {
-                $query->whereHas('items', function ($q) use ($request) {
-                    $q->where('storage_id', $request->storage_id);
-                });
-            }
-
-            if ($request->filled('sale_type')) {
-                $query->where('sale_type', $request->sale_type);
-            }
-
-            if ($request->filled('status')) {
-
-                if ($request->status === 'pending') {
-
-                    $query->where(function ($q) {
-                        $q->where('sale_type', SaleType::CREDIT->value)
-                            ->whereNull('payment_date');
-                    });
-                }
-
-                if ($request->status === 'paid') {
-
-                    $query->where(function ($q) {
-                        $q->where('sale_type', SaleType::CASH->value)
-                            ->orWhereNotNull('payment_date');
-                    });
-                }
-            }
-
-            $query->orderBy('sale_date', 'desc');
-
-            $perPage = $request->get('per_page', 20);
-
-            $sales = $query->paginate($perPage);
+            $sales = $this->getSalesService->execute($request);
 
             return $this->success(
                 $sales,
