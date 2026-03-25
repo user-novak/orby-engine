@@ -3,7 +3,7 @@
 namespace App\Services\Biller;
 
 use App\Models\Biller;
-use App\Enums\SaleType;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class GetSalesService
@@ -26,12 +26,13 @@ class GetSalesService
 
     private function applyFilters($query, Request $request): void
     {
-        if ($request->filled('date_from') && $request->filled('date_to')) {
-            $query->whereBetween('sale_date', [
-                $request->date_from,
-                $request->date_to
-            ]);
-        }
+        $query->when($request->filled('date_from'), function ($q) use ($request) {
+            $q->where('sale_date', '>=', Carbon::parse($request->date_from)->startOfDay());
+        });
+
+        $query->when($request->filled('date_to'), function ($q) use ($request) {
+            $q->where('sale_date', '<=', Carbon::parse($request->date_to)->endOfDay());
+        });
 
         if ($request->filled('client_id')) {
             $query->where('client_id', $request->client_id);
@@ -49,25 +50,6 @@ class GetSalesService
 
         if ($request->filled('sale_type')) {
             $query->where('sale_type', $request->sale_type);
-        }
-
-        if ($request->filled('status')) {
-
-            if ($request->status === 'pending') {
-
-                $query->where(function ($q) {
-                    $q->where('sale_type', SaleType::CREDIT->value)
-                        ->whereNull('payment_date');
-                });
-            }
-
-            if ($request->status === 'paid') {
-
-                $query->where(function ($q) {
-                    $q->where('sale_type', SaleType::CASH->value)
-                        ->orWhereNotNull('payment_date');
-                });
-            }
         }
     }
 }
