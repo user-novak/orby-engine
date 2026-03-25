@@ -37,8 +37,7 @@ class BillerController extends Controller
                 'price_major',
                 'percentage_general',
                 'price_general',
-                'created_at',
-                'updated_at',
+                'stock',
             ])->get(),
             'accounts' => Account::select('id', 'name')->get(),
         ];
