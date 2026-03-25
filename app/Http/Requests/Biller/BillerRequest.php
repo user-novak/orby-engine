@@ -24,6 +24,7 @@ class BillerRequest extends FormRequest
         return [
             'sale_date' => ['required', 'date'],
             'payment_date' => ['nullable', 'date'],
+            'amortization_amount' => ['nullable', 'numeric', 'min:0'],
             'place' => ['nullable', 'string', 'max:255'],
             'sale_type' => ['required', 'in:ACO,ACR'],
             'client_id' => ['required', 'exists:clients,id'],

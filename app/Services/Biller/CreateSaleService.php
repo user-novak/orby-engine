@@ -8,6 +8,7 @@ use App\Models\BillerPayment;
 use App\Models\Storage;
 use App\Models\Account;
 use App\Enums\SaleType;
+use App\Models\BillerPaymentAmortization;
 use Illuminate\Support\Facades\DB;
 use DomainException;
 
@@ -87,18 +88,37 @@ class CreateSaleService
     {
         if ($data['sale_type'] === SaleType::CREDIT->value) {
 
-            BillerPayment::create([
+            $payment = BillerPayment::create([
                 'biller_id' => $biller->id,
                 'client_id' => $data['client_id'],
                 'amount' => $total,
                 'payment_date' => $data['payment_date'],
             ]);
+
+            $this->handleAmortization($payment, $biller, $data);
         }
 
         if ($data['sale_type'] === SaleType::CASH->value) {
 
             $account = Account::findOrFail($data['account_id']);
             $account->increment('amount', $total);
+        }
+    }
+
+    private function handleAmortization($payment, $biller, $data): void
+    {
+        if (!empty($data['amortization_amount']) && $data['amortization_amount'] > 0) {
+
+            if ($data['amortization_amount'] > $payment->amount) {
+                throw new \DomainException('La amortización no puede ser mayor a la deuda');
+            }
+
+            BillerPaymentAmortization::create([
+                'biller_payment_id' => $payment->id,
+                'client_id' => $biller->client_id,
+                'amount' => $data['amortization_amount'],
+                'payment_date' => $biller->sale_date,
+            ]);
         }
     }
 }
