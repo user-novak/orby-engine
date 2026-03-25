@@ -13,4 +13,19 @@ class Client extends Model
         'phone',
         'address'
     ];
+
+    public function amortizations()
+    {
+        return $this->hasMany(BillerPaymentAmortization::class);
+    }
+
+    public function billers()
+    {
+        return $this->hasMany(Biller::class);
+    }
+
+    public function billerPayments()
+    {
+        return $this->hasMany(BillerPayment::class);
+    }
 }

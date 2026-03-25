@@ -5,29 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class BillerPayment extends Model
+class BillerPaymentAmortization extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'biller_id',
+        'biller_payment_id',
         'client_id',
         'amount',
-        'payment_date'
+        'payment_date',
     ];
 
-    public function biller()
+    public function payment()
     {
-        return $this->belongsTo(Biller::class);
+        return $this->belongsTo(BillerPayment::class, 'biller_payment_id');
     }
 
     public function client()
     {
         return $this->belongsTo(Client::class);
-    }
-
-    public function amortizations()
-    {
-        return $this->hasMany(BillerPaymentAmortization::class);
     }
 }
