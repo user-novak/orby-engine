@@ -119,6 +119,9 @@ class CreateSaleService
                 'amount' => $data['amortization_amount'],
                 'payment_date' => $biller->sale_date,
             ]);
+
+            $account = Account::findOrFail($biller->account_id);
+            $account->increment('amount', $data['amortization_amount']);
         }
     }
 }
