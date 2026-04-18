@@ -12,4 +12,9 @@ class Account extends Model
         'account_number',
         'description',
     ];
+
+    public function billers()
+    {
+        return $this->hasMany(Biller::class);
+    }
 }
