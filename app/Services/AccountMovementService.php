@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\AccountMovementStatus;
+use App\Enums\AccountMovementType;
 use App\Models\AccountMovement;
 use App\Models\Biller;
 use Illuminate\Support\Facades\DB;
@@ -26,15 +28,15 @@ class AccountMovementService
     {
         return DB::transaction(function () use ($biller, $data) {
             $pending = AccountMovement::where('biller_id', $biller->id)
-                ->where('status', 'cuenta_por_cobrar')
+                ->where('status', AccountMovementStatus::CuentaPorCobrar)
                 ->lockForUpdate()
                 ->firstOrFail();
 
             $amortization = AccountMovement::create([
                 'amount' => $data['amount'],
                 'movement_date' => now(),
-                'type' => 'ingreso',
-                'status' => 'amortizacion',
+                'type' => AccountMovementType::Ingreso,
+                'status' => AccountMovementStatus::Amortizacion,
                 'description' => $data['description'] ?? null,
                 'account_id' => $data['account_id'],
                 'biller_id' => $biller->id,
@@ -44,7 +46,7 @@ class AccountMovementService
 
             $pending->update([
                 'amount' => $remaining,
-                'status' => $remaining <= 0 ? 'cuenta_cobrada' : 'cuenta_por_cobrar',
+                'status' => $remaining <= 0 ? AccountMovementStatus::CuentaCobrada : AccountMovementStatus::CuentaPorCobrar,
             ]);
 
             return $amortization;

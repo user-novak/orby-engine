@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\StockMovementType;
 use App\Models\StockMovement;
 
 class StockMovementService
@@ -21,7 +22,7 @@ class StockMovementService
             'product_id' => $data['product_id'],
             'quantity' => $data['quantity'],
             'movement_date' => $data['movement_date'] ?? now(),
-            'type' => 'entrada',
+            'type' => StockMovementType::Entrada,
             'biller_id' => null,
         ]);
     }
