@@ -7,12 +7,16 @@ use App\Http\Controllers\Api\StockMovementController;
 use App\Http\Controllers\Api\BillerItemController;
 use App\Http\Controllers\Api\AccountMovementController;
 use App\Http\Controllers\Api\AmortizationController;
+use App\Http\Controllers\Api\BillerController;
 use Illuminate\Support\Facades\Route;
 
 // Entidades simples: CRUD completo.
 Route::apiResource('clients', ClientController::class);
 Route::apiResource('accounts', AccountController::class);
 Route::apiResource('products', ProductController::class);
+
+// billers: index/show/store. Sin update/destroy (ver nota en el controller).
+Route::apiResource('billers', BillerController::class)->only(['index', 'show', 'store']);
 
 // stock_movements: solo index/show/store (store = únicamente entradas manuales).
 Route::apiResource('stock-movements', StockMovementController::class)->only(['index', 'show', 'store']);
