@@ -1,0 +1,160 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "Orby Engine API",
+    "version": "1.0.0",
+    "description": "Contrato público de la API. Los montos y cantidades se serializan como strings decimales con dos posiciones."
+  },
+  "servers": [{"url": "/", "description": "Mismo host de la API"}],
+  "tags": [
+    {"name": "Clients"},
+    {"name": "Accounts"},
+    {"name": "Products"},
+    {"name": "Billers"},
+    {"name": "Stock movements"},
+    {"name": "Account movements"},
+    {"name": "Amortizations"}
+  ],
+  "paths": {
+    "/api/clients": {
+      "get": {"tags": ["Clients"], "operationId": "listClients", "summary": "Lista clientes", "parameters": [{"$ref": "#/components/parameters/Page"}], "responses": {"200": {"$ref": "#/components/responses/ClientCollection"}}},
+      "post": {"tags": ["Clients"], "operationId": "createClient", "summary": "Crea un cliente", "requestBody": {"$ref": "#/components/requestBodies/ClientCreate"}, "responses": {"200": {"$ref": "#/components/responses/Client"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+    },
+    "/api/clients/{client}": {
+      "parameters": [{"$ref": "#/components/parameters/ClientId"}],
+      "get": {"tags": ["Clients"], "operationId": "getClient", "responses": {"200": {"$ref": "#/components/responses/Client"}, "404": {"$ref": "#/components/responses/NotFound"}}},
+      "put": {"tags": ["Clients"], "operationId": "replaceClient", "summary": "Actualiza parcialmente un cliente", "requestBody": {"$ref": "#/components/requestBodies/ClientUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Client"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
+      "patch": {"tags": ["Clients"], "operationId": "updateClient", "summary": "Actualiza parcialmente un cliente", "requestBody": {"$ref": "#/components/requestBodies/ClientUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Client"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
+      "delete": {"tags": ["Clients"], "operationId": "deleteClient", "responses": {"204": {"description": "Cliente eliminado."}, "404": {"$ref": "#/components/responses/NotFound"}}}
+    },
+    "/api/accounts": {
+      "get": {"tags": ["Accounts"], "operationId": "listAccounts", "parameters": [{"$ref": "#/components/parameters/Page"}], "responses": {"200": {"$ref": "#/components/responses/AccountCollection"}}},
+      "post": {"tags": ["Accounts"], "operationId": "createAccount", "requestBody": {"$ref": "#/components/requestBodies/AccountCreate"}, "responses": {"200": {"$ref": "#/components/responses/Account"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+    },
+    "/api/accounts/{account}": {
+      "parameters": [{"$ref": "#/components/parameters/AccountId"}],
+      "get": {"tags": ["Accounts"], "operationId": "getAccount", "responses": {"200": {"$ref": "#/components/responses/Account"}, "404": {"$ref": "#/components/responses/NotFound"}}},
+      "put": {"tags": ["Accounts"], "operationId": "replaceAccount", "description": "No permite editar amount.", "requestBody": {"$ref": "#/components/requestBodies/AccountUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Account"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
+      "patch": {"tags": ["Accounts"], "operationId": "updateAccount", "description": "No permite editar amount.", "requestBody": {"$ref": "#/components/requestBodies/AccountUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Account"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
+      "delete": {"tags": ["Accounts"], "operationId": "deleteAccount", "responses": {"204": {"description": "Cuenta eliminada."}, "404": {"$ref": "#/components/responses/NotFound"}}}
+    },
+    "/api/products": {
+      "get": {"tags": ["Products"], "operationId": "listProducts", "parameters": [{"$ref": "#/components/parameters/Page"}], "responses": {"200": {"$ref": "#/components/responses/ProductCollection"}}},
+      "post": {"tags": ["Products"], "operationId": "createProduct", "description": "Los precios por nivel se calculan en el servidor.", "requestBody": {"$ref": "#/components/requestBodies/ProductCreate"}, "responses": {"200": {"$ref": "#/components/responses/Product"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+    },
+    "/api/products/{product}": {
+      "parameters": [{"$ref": "#/components/parameters/ProductId"}],
+      "get": {"tags": ["Products"], "operationId": "getProduct", "responses": {"200": {"$ref": "#/components/responses/Product"}, "404": {"$ref": "#/components/responses/NotFound"}}},
+      "put": {"tags": ["Products"], "operationId": "replaceProduct", "requestBody": {"$ref": "#/components/requestBodies/ProductUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Product"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
+      "patch": {"tags": ["Products"], "operationId": "updateProduct", "requestBody": {"$ref": "#/components/requestBodies/ProductUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Product"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
+      "delete": {"tags": ["Products"], "operationId": "deleteProduct", "responses": {"204": {"description": "Producto eliminado."}, "404": {"$ref": "#/components/responses/NotFound"}}}
+    },
+    "/api/billers": {
+      "get": {"tags": ["Billers"], "operationId": "listBillers", "parameters": [{"$ref": "#/components/parameters/Page"}, {"name": "client_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "sale_type", "in": "query", "schema": {"type": "string", "enum": ["contado", "credito"]}}], "responses": {"200": {"$ref": "#/components/responses/BillerCollection"}}},
+      "post": {"tags": ["Billers"], "operationId": "createBiller", "summary": "Registra una venta", "description": "Operación transaccional: crea factura, líneas, salidas de stock y movimientos de cuenta. Los importes se calculan en el servidor.", "requestBody": {"$ref": "#/components/requestBodies/BillerCreate"}, "responses": {"200": {"$ref": "#/components/responses/Biller"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+    },
+    "/api/billers/{biller}": {
+      "parameters": [{"$ref": "#/components/parameters/BillerId"}],
+      "get": {"tags": ["Billers"], "operationId": "getBiller", "summary": "Obtiene una factura con cliente, líneas y movimientos", "responses": {"200": {"$ref": "#/components/responses/Biller"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+    },
+    "/api/billers/{biller}/amortizations": {
+      "parameters": [{"$ref": "#/components/parameters/BillerId"}],
+      "post": {"tags": ["Amortizations"], "operationId": "createAmortization", "summary": "Registra un abono sobre deuda pendiente", "requestBody": {"$ref": "#/components/requestBodies/AmortizationCreate"}, "responses": {"200": {"$ref": "#/components/responses/AccountMovement"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+    },
+    "/api/stock-movements": {
+      "get": {"tags": ["Stock movements"], "operationId": "listStockMovements", "parameters": [{"$ref": "#/components/parameters/Page"}, {"name": "product_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["entrada", "salida"]}}], "responses": {"200": {"$ref": "#/components/responses/StockMovementCollection"}}},
+      "post": {"tags": ["Stock movements"], "operationId": "createManualStockEntry", "summary": "Registra una entrada manual", "description": "El servidor fuerza type=entrada y biller_id=null.", "requestBody": {"$ref": "#/components/requestBodies/StockMovementCreate"}, "responses": {"200": {"$ref": "#/components/responses/StockMovement"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+    },
+    "/api/stock-movements/{stock_movement}": {
+      "parameters": [{"$ref": "#/components/parameters/StockMovementId"}],
+      "get": {"tags": ["Stock movements"], "operationId": "getStockMovement", "responses": {"200": {"$ref": "#/components/responses/StockMovement"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+    },
+    "/api/biller-items": {
+      "get": {"tags": ["Billers"], "operationId": "listBillerItems", "parameters": [{"$ref": "#/components/parameters/Page"}, {"name": "biller_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "product_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}], "responses": {"200": {"$ref": "#/components/responses/BillerItemCollection"}}}
+    },
+    "/api/biller-items/{biller_item}": {
+      "parameters": [{"$ref": "#/components/parameters/BillerItemId"}],
+      "get": {"tags": ["Billers"], "operationId": "getBillerItem", "responses": {"200": {"$ref": "#/components/responses/BillerItem"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+    },
+    "/api/account-movements": {
+      "get": {"tags": ["Account movements"], "operationId": "listAccountMovements", "parameters": [{"$ref": "#/components/parameters/Page"}, {"name": "account_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "biller_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "status", "in": "query", "schema": {"$ref": "#/components/schemas/AccountMovementStatus"}}, {"name": "type", "in": "query", "schema": {"$ref": "#/components/schemas/AccountMovementType"}}], "responses": {"200": {"$ref": "#/components/responses/AccountMovementCollection"}}}
+    },
+    "/api/account-movements/{account_movement}": {
+      "parameters": [{"$ref": "#/components/parameters/AccountMovementId"}],
+      "get": {"tags": ["Account movements"], "operationId": "getAccountMovement", "responses": {"200": {"$ref": "#/components/responses/AccountMovement"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+    }
+  },
+  "components": {
+    "parameters": {
+      "Page": {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 1, "default": 1}},
+      "ClientId": {"name": "client", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "AccountId": {"name": "account", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "ProductId": {"name": "product", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "BillerId": {"name": "biller", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "BillerItemId": {"name": "biller_item", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "StockMovementId": {"name": "stock_movement", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "AccountMovementId": {"name": "account_movement", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}
+    },
+    "requestBodies": {
+      "ClientCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ClientCreate"}}}},
+      "ClientUpdate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ClientUpdate"}}}},
+      "AccountCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountCreate"}}}},
+      "AccountUpdate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountUpdate"}}}},
+      "ProductCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductCreate"}}}},
+      "ProductUpdate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductUpdate"}}}},
+      "BillerCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BillerCreate"}}}},
+      "StockMovementCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StockMovementCreate"}}}},
+      "AmortizationCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AmortizationCreate"}}}}
+    },
+    "responses": {
+      "Client": {"description": "Cliente.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Client"}}}},
+      "Account": {"description": "Cuenta.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Account"}}}},
+      "Product": {"description": "Producto.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Product"}}}},
+      "Biller": {"description": "Factura.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Biller"}}}},
+      "BillerItem": {"description": "Línea de factura.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BillerItem"}}}},
+      "StockMovement": {"description": "Movimiento de stock.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StockMovement"}}}},
+      "AccountMovement": {"description": "Movimiento de cuenta.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountMovement"}}}},
+      "ClientCollection": {"description": "Página de clientes.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ClientCollection"}}}},
+      "AccountCollection": {"description": "Página de cuentas.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountCollection"}}}},
+      "ProductCollection": {"description": "Página de productos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductCollection"}}}},
+      "BillerCollection": {"description": "Página de facturas.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BillerCollection"}}}},
+      "BillerItemCollection": {"description": "Página de líneas de factura.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BillerItemCollection"}}}},
+      "StockMovementCollection": {"description": "Página de movimientos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StockMovementCollection"}}}},
+      "AccountMovementCollection": {"description": "Página de movimientos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountMovementCollection"}}}},
+      "NotFound": {"description": "Recurso no encontrado.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "ValidationError": {"description": "Error de validación o regla de negocio.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ValidationError"}}}}
+    },
+    "schemas": {
+      "Decimal": {"type": "string", "pattern": "^-?\\d+\\.\\d{2}$", "examples": ["125.50"]},
+      "Timestamp": {"type": "string", "format": "date-time"},
+      "Client": {"type": "object", "properties": {"id": {"type": "integer", "readOnly": true}, "dni": {"type": ["string", "null"], "maxLength": 8}, "name": {"type": "string", "maxLength": 255}, "ruc": {"type": ["string", "null"], "maxLength": 11}, "phone": {"type": ["string", "null"], "maxLength": 20}, "address": {"type": ["string", "null"], "maxLength": 255}, "created_at": {"$ref": "#/components/schemas/Timestamp"}, "updated_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "name", "created_at", "updated_at"]},
+      "Account": {"type": "object", "properties": {"id": {"type": "integer", "readOnly": true}, "name": {"type": "string"}, "account_number": {"type": ["string", "null"]}, "amount": {"$ref": "#/components/schemas/Decimal"}, "description": {"type": ["string", "null"]}, "created_at": {"$ref": "#/components/schemas/Timestamp"}, "updated_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "name", "amount", "created_at", "updated_at"]},
+      "Product": {"type": "object", "properties": {"id": {"type": "integer", "readOnly": true}, "description": {"type": "string"}, "brand": {"type": ["string", "null"]}, "measure_unity": {"type": "string"}, "unit_price": {"$ref": "#/components/schemas/Decimal"}, "percentage_distributor": {"$ref": "#/components/schemas/Decimal"}, "price_distributor": {"$ref": "#/components/schemas/Decimal"}, "percentage_major": {"$ref": "#/components/schemas/Decimal"}, "price_major": {"$ref": "#/components/schemas/Decimal"}, "percentage_general": {"$ref": "#/components/schemas/Decimal"}, "price_general": {"$ref": "#/components/schemas/Decimal"}, "stock": {"$ref": "#/components/schemas/Decimal"}, "created_at": {"$ref": "#/components/schemas/Timestamp"}, "updated_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "description", "measure_unity", "unit_price", "stock", "created_at", "updated_at"]},
+      "BillerItem": {"type": "object", "properties": {"id": {"type": "integer"}, "biller_id": {"type": "integer"}, "product_id": {"type": "integer"}, "quantity": {"$ref": "#/components/schemas/Decimal"}, "unit_price": {"$ref": "#/components/schemas/Decimal"}, "subtotal": {"$ref": "#/components/schemas/Decimal"}, "product": {"$ref": "#/components/schemas/Product"}}, "required": ["id", "biller_id", "product_id", "quantity", "unit_price", "subtotal"]},
+      "AccountMovementType": {"type": "string", "enum": ["ingreso", "egreso"]},
+      "AccountMovementStatus": {"type": "string", "enum": ["cuenta_cobrada", "cuenta_pagada", "cuenta_por_cobrar", "cuenta_por_pagar", "amortizacion"]},
+      "AccountMovement": {"type": "object", "properties": {"id": {"type": "integer"}, "amount": {"$ref": "#/components/schemas/Decimal"}, "movement_date": {"$ref": "#/components/schemas/Timestamp"}, "type": {"$ref": "#/components/schemas/AccountMovementType"}, "status": {"$ref": "#/components/schemas/AccountMovementStatus"}, "description": {"type": ["string", "null"]}, "account_id": {"type": ["integer", "null"]}, "biller_id": {"type": "integer"}, "account": {"$ref": "#/components/schemas/Account"}}, "required": ["id", "amount", "movement_date", "type", "status", "biller_id"]},
+      "Biller": {"type": "object", "properties": {"id": {"type": "integer"}, "sale_date": {"type": "string", "format": "date"}, "payment_date": {"type": ["string", "null"], "format": "date"}, "sale_type": {"type": "string", "enum": ["contado", "credito"]}, "subtotal": {"$ref": "#/components/schemas/Decimal"}, "igv": {"$ref": "#/components/schemas/Decimal"}, "total": {"$ref": "#/components/schemas/Decimal"}, "client_id": {"type": "integer"}, "account_id": {"type": ["integer", "null"]}, "client": {"$ref": "#/components/schemas/Client"}, "items": {"type": "array", "items": {"$ref": "#/components/schemas/BillerItem"}}, "account_movements": {"type": "array", "items": {"$ref": "#/components/schemas/AccountMovement"}}, "created_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "sale_date", "sale_type", "subtotal", "igv", "total", "client_id", "created_at"]},
+      "StockMovement": {"type": "object", "properties": {"id": {"type": "integer"}, "type": {"type": "string", "enum": ["entrada", "salida"]}, "quantity": {"$ref": "#/components/schemas/Decimal"}, "movement_date": {"$ref": "#/components/schemas/Timestamp"}, "product_id": {"type": "integer"}, "biller_id": {"type": ["integer", "null"]}, "product": {"$ref": "#/components/schemas/Product"}, "created_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "type", "quantity", "movement_date", "product_id", "created_at"]},
+      "ClientCreate": {"type": "object", "properties": {"dni": {"type": ["string", "null"], "maxLength": 8}, "name": {"type": "string"}, "ruc": {"type": ["string", "null"], "maxLength": 11}, "phone": {"type": ["string", "null"]}, "address": {"type": ["string", "null"]}}, "required": ["name"], "anyOf": [{"required": ["dni"]}, {"required": ["ruc"]}], "example": {"dni": "12345678", "name": "María Pérez"}},
+      "ClientUpdate": {"type": "object", "properties": {"dni": {"type": ["string", "null"], "maxLength": 8}, "name": {"type": "string"}, "ruc": {"type": ["string", "null"], "maxLength": 11}, "phone": {"type": ["string", "null"]}, "address": {"type": ["string", "null"]}}},
+      "AccountCreate": {"type": "object", "properties": {"name": {"type": "string"}, "account_number": {"type": ["string", "null"]}, "amount": {"type": "number", "minimum": 0}, "description": {"type": ["string", "null"]}}, "required": ["name"], "example": {"name": "Caja principal", "amount": 500}},
+      "AccountUpdate": {"type": "object", "properties": {"name": {"type": "string"}, "account_number": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]}}, "additionalProperties": false},
+      "ProductCreate": {"type": "object", "properties": {"description": {"type": "string"}, "brand": {"type": ["string", "null"]}, "measure_unity": {"type": "string", "maxLength": 20}, "unit_price": {"type": "number", "minimum": 0}, "percentage_distributor": {"type": "number", "minimum": 0, "maximum": 100}, "percentage_major": {"type": "number", "minimum": 0, "maximum": 100}, "percentage_general": {"type": "number", "minimum": 0, "maximum": 100}, "stock": {"type": "number", "minimum": 0}}, "required": ["description", "measure_unity", "unit_price"]},
+      "ProductUpdate": {"type": "object", "properties": {"description": {"type": "string"}, "brand": {"type": ["string", "null"]}, "measure_unity": {"type": "string", "maxLength": 20}, "unit_price": {"type": "number", "minimum": 0}, "percentage_distributor": {"type": "number", "minimum": 0, "maximum": 100}, "percentage_major": {"type": "number", "minimum": 0, "maximum": 100}, "percentage_general": {"type": "number", "minimum": 0, "maximum": 100}}, "additionalProperties": false},
+      "BillerCreate": {"type": "object", "properties": {"client_id": {"type": "integer", "minimum": 1}, "sale_type": {"type": "string", "enum": ["contado", "credito"]}, "sale_date": {"type": "string", "format": "date"}, "payment_date": {"type": ["string", "null"], "format": "date"}, "account_id": {"type": ["integer", "null"], "description": "Obligatoria para contado y crédito con pago inicial."}, "initial_payment": {"type": ["number", "null"], "exclusiveMinimum": 0, "description": "Solo en crédito."}, "items": {"type": "array", "minItems": 1, "items": {"type": "object", "properties": {"product_id": {"type": "integer", "minimum": 1}, "quantity": {"type": "number", "exclusiveMinimum": 0}, "price_tier": {"type": "string", "enum": ["distributor", "major", "general"]}}, "required": ["product_id", "quantity", "price_tier"]}}}, "required": ["client_id", "sale_type", "sale_date", "items"], "example": {"client_id": 1, "sale_type": "contado", "sale_date": "2026-10-20", "account_id": 1, "items": [{"product_id": 1, "quantity": 2, "price_tier": "general"}]}},
+      "StockMovementCreate": {"type": "object", "properties": {"product_id": {"type": "integer", "minimum": 1}, "quantity": {"type": "number", "exclusiveMinimum": 0}, "movement_date": {"type": "string", "format": "date-time"}}, "required": ["product_id", "quantity"]},
+      "AmortizationCreate": {"type": "object", "properties": {"account_id": {"type": "integer", "minimum": 1}, "amount": {"type": "number", "exclusiveMinimum": 0}, "description": {"type": ["string", "null"]}}, "required": ["account_id", "amount"]},
+      "CollectionBase": {"type": "object", "properties": {"data": {"type": "array"}, "links": {"type": "object"}, "meta": {"type": "object"}}, "required": ["data", "links", "meta"]},
+      "ClientCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Client"}}}}]},
+      "AccountCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Account"}}}}]},
+      "ProductCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Product"}}}}]},
+      "BillerCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Biller"}}}}]},
+      "BillerItemCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/BillerItem"}}}}]},
+      "StockMovementCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/StockMovement"}}}}]},
+      "AccountMovementCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/AccountMovement"}}}}]},
+      "Error": {"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"]},
+      "ValidationError": {"type": "object", "properties": {"message": {"type": "string"}, "errors": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}}, "required": ["message", "errors"]}
+    }
+  }
+}

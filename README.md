@@ -1,5 +1,11 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
+## OpenAPI
+
+The API contract is published as [OpenAPI 3.1 JSON](public/openapi.json). Once
+deployed, it is available at the public openapi.json path and can be imported
+into Swagger UI, Postman, Insomnia, or an OpenAPI client generator.
+
 ## Deployment as an API
 
 The production image uses Nginx and PHP-FPM, listens on port `8080`, and exposes Laravel's health endpoint at `/up`. It deliberately does not install Node.js or build Vite assets because this project is deployed as an API.
