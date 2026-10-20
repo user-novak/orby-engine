@@ -1,5 +1,17 @@
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
+## Deployment as an API
+
+The production image uses Nginx and PHP-FPM, listens on port `8080`, and exposes Laravel's health endpoint at `/up`. It deliberately does not install Node.js or build Vite assets because this project is deployed as an API.
+
+Set the values from [`.env.production.example`](.env.production.example) in the hosting provider's environment-variable panel. Do not upload a `.env` file or commit credentials. For Neon, use the **Pooled connection** URL exactly as provided, including `sslmode=require`.
+
+Before exposing a new environment, run the migrations once against its Neon database:
+
+```sh
+php artisan migrate --force
+```
+
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
