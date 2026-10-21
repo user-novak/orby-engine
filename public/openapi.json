@@ -3,158 +3,2935 @@
   "info": {
     "title": "Orby Engine API",
     "version": "1.0.0",
-    "description": "Contrato público de la API. Los montos y cantidades se serializan como strings decimales con dos posiciones."
+    "description": "API REST para administrar clientes, cuentas, productos, ventas, inventario y movimientos contables de Orby.\n\nLos endpoints de colección están paginados y devuelven 15 registros por página. Los importes, porcentajes y cantidades de las respuestas se serializan como strings decimales con dos posiciones; en las solicitudes se envían como números.\n\nActualmente la API no exige autenticación. Los campos marcados como `required` son obligatorios; el resto son opcionales, salvo las reglas condicionales descritas en cada esquema.",
+    "license": {
+      "name": "MIT"
+    }
   },
-  "servers": [{"url": "/", "description": "Mismo host de la API"}],
+  "servers": [
+    {
+      "url": "https://orby-engine.onrender.com",
+      "description": "Servidor de producción"
+    }
+  ],
   "tags": [
-    {"name": "Clients"},
-    {"name": "Accounts"},
-    {"name": "Products"},
-    {"name": "Billers"},
-    {"name": "Stock movements"},
-    {"name": "Account movements"},
-    {"name": "Amortizations"}
+    {
+      "name": "Clients",
+      "description": "Alta, consulta, actualización y eliminación de clientes."
+    },
+    {
+      "name": "Accounts",
+      "description": "Administración de cuentas de dinero. El saldo solo cambia mediante movimientos contables."
+    },
+    {
+      "name": "Products",
+      "description": "Catálogo, precios calculados y stock disponible de productos."
+    },
+    {
+      "name": "Billers",
+      "description": "Registro y consulta de ventas. Una venta genera líneas, salidas de stock y movimientos contables de forma transaccional."
+    },
+    {
+      "name": "Biller items",
+      "description": "Consulta de las líneas inmutables que pertenecen a las ventas."
+    },
+    {
+      "name": "Stock movements",
+      "description": "Kardex de inventario y registro de entradas manuales."
+    },
+    {
+      "name": "Account movements",
+      "description": "Consulta del libro de movimientos de cuentas."
+    },
+    {
+      "name": "Amortizations",
+      "description": "Registro de abonos a ventas al crédito con deuda pendiente."
+    }
   ],
   "paths": {
     "/api/clients": {
-      "get": {"tags": ["Clients"], "operationId": "listClients", "summary": "Lista clientes", "parameters": [{"$ref": "#/components/parameters/Page"}], "responses": {"200": {"$ref": "#/components/responses/ClientCollection"}}},
-      "post": {"tags": ["Clients"], "operationId": "createClient", "summary": "Crea un cliente", "requestBody": {"$ref": "#/components/requestBodies/ClientCreate"}, "responses": {"200": {"$ref": "#/components/responses/Client"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "operationId": "listClients",
+        "summary": "Listar clientes",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ClientCollection"
+          }
+        },
+        "description": "Devuelve una página de clientes ordenados del más reciente al más antiguo."
+      },
+      "post": {
+        "tags": [
+          "Clients"
+        ],
+        "operationId": "createClient",
+        "summary": "Crear un cliente",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ClientCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Client"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Crea un cliente. Se debe proporcionar al menos un documento de identidad: `dni` o `ruc`."
+      }
     },
     "/api/clients/{client}": {
-      "parameters": [{"$ref": "#/components/parameters/ClientId"}],
-      "get": {"tags": ["Clients"], "operationId": "getClient", "responses": {"200": {"$ref": "#/components/responses/Client"}, "404": {"$ref": "#/components/responses/NotFound"}}},
-      "put": {"tags": ["Clients"], "operationId": "replaceClient", "summary": "Actualiza parcialmente un cliente", "requestBody": {"$ref": "#/components/requestBodies/ClientUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Client"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
-      "patch": {"tags": ["Clients"], "operationId": "updateClient", "summary": "Actualiza parcialmente un cliente", "requestBody": {"$ref": "#/components/requestBodies/ClientUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Client"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
-      "delete": {"tags": ["Clients"], "operationId": "deleteClient", "responses": {"204": {"description": "Cliente eliminado."}, "404": {"$ref": "#/components/responses/NotFound"}}}
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ClientId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Clients"
+        ],
+        "operationId": "getClient",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Client"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Obtener un cliente",
+        "description": "Devuelve el cliente identificado por `client`."
+      },
+      "put": {
+        "tags": [
+          "Clients"
+        ],
+        "operationId": "replaceClient",
+        "summary": "Actualizar parcialmente un cliente con PUT",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ClientUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Client"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Actualiza únicamente los campos enviados. Aunque se acepta `PUT`, esta operación tiene semántica parcial; para nuevas integraciones se recomienda `PATCH`."
+      },
+      "patch": {
+        "tags": [
+          "Clients"
+        ],
+        "operationId": "updateClient",
+        "summary": "Actualizar parcialmente un cliente",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ClientUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Client"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Actualiza únicamente los campos enviados y conserva los demás valores."
+      },
+      "delete": {
+        "tags": [
+          "Clients"
+        ],
+        "operationId": "deleteClient",
+        "responses": {
+          "204": {
+            "description": "Cliente eliminado."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Eliminar un cliente",
+        "description": "Elimina el cliente y devuelve una respuesta sin contenido. La base de datos puede impedir la eliminación si existen ventas asociadas."
+      }
     },
     "/api/accounts": {
-      "get": {"tags": ["Accounts"], "operationId": "listAccounts", "parameters": [{"$ref": "#/components/parameters/Page"}], "responses": {"200": {"$ref": "#/components/responses/AccountCollection"}}},
-      "post": {"tags": ["Accounts"], "operationId": "createAccount", "requestBody": {"$ref": "#/components/requestBodies/AccountCreate"}, "responses": {"200": {"$ref": "#/components/responses/Account"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "listAccounts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AccountCollection"
+          }
+        },
+        "summary": "Listar cuentas",
+        "description": "Devuelve una página de cuentas ordenadas de la más reciente a la más antigua."
+      },
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "createAccount",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AccountCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Account"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "summary": "Crear una cuenta",
+        "description": "Crea una cuenta de dinero. `amount` representa únicamente el saldo inicial; después de crearla, el saldo se modifica mediante movimientos contables."
+      }
     },
     "/api/accounts/{account}": {
-      "parameters": [{"$ref": "#/components/parameters/AccountId"}],
-      "get": {"tags": ["Accounts"], "operationId": "getAccount", "responses": {"200": {"$ref": "#/components/responses/Account"}, "404": {"$ref": "#/components/responses/NotFound"}}},
-      "put": {"tags": ["Accounts"], "operationId": "replaceAccount", "description": "No permite editar amount.", "requestBody": {"$ref": "#/components/requestBodies/AccountUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Account"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
-      "patch": {"tags": ["Accounts"], "operationId": "updateAccount", "description": "No permite editar amount.", "requestBody": {"$ref": "#/components/requestBodies/AccountUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Account"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
-      "delete": {"tags": ["Accounts"], "operationId": "deleteAccount", "responses": {"204": {"description": "Cuenta eliminada."}, "404": {"$ref": "#/components/responses/NotFound"}}}
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AccountId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "getAccount",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Account"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Obtener una cuenta",
+        "description": "Devuelve la cuenta identificada por `account`, incluido su saldo actual."
+      },
+      "put": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "replaceAccount",
+        "description": "Actualiza únicamente los metadatos enviados. Aunque se acepta `PUT`, la operación es parcial. El campo `amount` no es editable.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AccountUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Account"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "summary": "Actualizar parcialmente una cuenta con PUT"
+      },
+      "patch": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "updateAccount",
+        "description": "Actualiza únicamente los metadatos enviados y conserva los demás valores. El campo `amount` no es editable.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AccountUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Account"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "summary": "Actualizar parcialmente una cuenta"
+      },
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "deleteAccount",
+        "responses": {
+          "204": {
+            "description": "Cuenta eliminada."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Eliminar una cuenta",
+        "description": "Elimina la cuenta y devuelve una respuesta sin contenido. La base de datos puede impedir la eliminación si existen ventas o movimientos asociados."
+      }
     },
     "/api/products": {
-      "get": {"tags": ["Products"], "operationId": "listProducts", "parameters": [{"$ref": "#/components/parameters/Page"}], "responses": {"200": {"$ref": "#/components/responses/ProductCollection"}}},
-      "post": {"tags": ["Products"], "operationId": "createProduct", "description": "Los precios por nivel se calculan en el servidor.", "requestBody": {"$ref": "#/components/requestBodies/ProductCreate"}, "responses": {"200": {"$ref": "#/components/responses/Product"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "listProducts",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProductCollection"
+          }
+        },
+        "summary": "Listar productos",
+        "description": "Devuelve una página de productos ordenados del más reciente al más antiguo, con precios calculados y stock actual."
+      },
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "createProduct",
+        "description": "Crea un producto. El servidor calcula cada precio de venta aplicando el porcentaje correspondiente sobre `unit_price`. `stock` es únicamente el stock inicial.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ProductCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Product"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "summary": "Crear un producto"
+      }
     },
     "/api/products/{product}": {
-      "parameters": [{"$ref": "#/components/parameters/ProductId"}],
-      "get": {"tags": ["Products"], "operationId": "getProduct", "responses": {"200": {"$ref": "#/components/responses/Product"}, "404": {"$ref": "#/components/responses/NotFound"}}},
-      "put": {"tags": ["Products"], "operationId": "replaceProduct", "requestBody": {"$ref": "#/components/requestBodies/ProductUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Product"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
-      "patch": {"tags": ["Products"], "operationId": "updateProduct", "requestBody": {"$ref": "#/components/requestBodies/ProductUpdate"}, "responses": {"200": {"$ref": "#/components/responses/Product"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}},
-      "delete": {"tags": ["Products"], "operationId": "deleteProduct", "responses": {"204": {"description": "Producto eliminado."}, "404": {"$ref": "#/components/responses/NotFound"}}}
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProductId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "getProduct",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Product"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Obtener un producto",
+        "description": "Devuelve el producto identificado por `product`, incluidos sus precios calculados y stock actual."
+      },
+      "put": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "replaceProduct",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ProductUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Product"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "summary": "Actualizar parcialmente un producto con PUT",
+        "description": "Actualiza únicamente los campos enviados. Aunque se acepta `PUT`, la operación es parcial. El servidor recalcula los precios afectados; `stock` no es editable."
+      },
+      "patch": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "updateProduct",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ProductUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Product"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "summary": "Actualizar parcialmente un producto",
+        "description": "Actualiza únicamente los campos enviados y recalcula los precios afectados. El stock solo cambia mediante movimientos de inventario."
+      },
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "operationId": "deleteProduct",
+        "responses": {
+          "204": {
+            "description": "Producto eliminado."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Eliminar un producto",
+        "description": "Elimina el producto y devuelve una respuesta sin contenido. La base de datos puede impedir la eliminación si existen líneas de venta o movimientos asociados."
+      }
     },
     "/api/billers": {
-      "get": {"tags": ["Billers"], "operationId": "listBillers", "parameters": [{"$ref": "#/components/parameters/Page"}, {"name": "client_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "sale_type", "in": "query", "schema": {"type": "string", "enum": ["contado", "credito"]}}], "responses": {"200": {"$ref": "#/components/responses/BillerCollection"}}},
-      "post": {"tags": ["Billers"], "operationId": "createBiller", "summary": "Registra una venta", "description": "Operación transaccional: crea factura, líneas, salidas de stock y movimientos de cuenta. Los importes se calculan en el servidor.", "requestBody": {"$ref": "#/components/requestBodies/BillerCreate"}, "responses": {"200": {"$ref": "#/components/responses/Biller"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+      "get": {
+        "tags": [
+          "Billers"
+        ],
+        "operationId": "listBillers",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra las ventas que pertenecen a este cliente.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "sale_type",
+            "in": "query",
+            "required": false,
+            "description": "Filtra por modalidad de venta.",
+            "schema": {
+              "$ref": "#/components/schemas/SaleType"
+            },
+            "example": "credito"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BillerCollection"
+          }
+        },
+        "summary": "Listar ventas",
+        "description": "Devuelve una página de ventas ordenadas por fecha de venta descendente. Permite filtrar por cliente y tipo de venta; cada resultado incluye el cliente."
+      },
+      "post": {
+        "tags": [
+          "Billers"
+        ],
+        "operationId": "createBiller",
+        "summary": "Registrar una venta",
+        "description": "Crea atómicamente la venta, sus líneas, las salidas de stock y los movimientos contables. El servidor calcula precios, subtotal, IGV del 18 % y total; también comprueba el stock antes de descontarlo.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/BillerCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Biller"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
     },
     "/api/billers/{biller}": {
-      "parameters": [{"$ref": "#/components/parameters/BillerId"}],
-      "get": {"tags": ["Billers"], "operationId": "getBiller", "summary": "Obtiene una factura con cliente, líneas y movimientos", "responses": {"200": {"$ref": "#/components/responses/Biller"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillerId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Billers"
+        ],
+        "operationId": "getBiller",
+        "summary": "Obtener una venta",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Biller"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "description": "Devuelve la venta identificada por `biller` con el cliente, las líneas y sus productos, y los movimientos contables relacionados."
+      }
     },
     "/api/billers/{biller}/amortizations": {
-      "parameters": [{"$ref": "#/components/parameters/BillerId"}],
-      "post": {"tags": ["Amortizations"], "operationId": "createAmortization", "summary": "Registra un abono sobre deuda pendiente", "requestBody": {"$ref": "#/components/requestBodies/AmortizationCreate"}, "responses": {"200": {"$ref": "#/components/responses/AccountMovement"}, "404": {"$ref": "#/components/responses/NotFound"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillerId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Amortizations"
+        ],
+        "operationId": "createAmortization",
+        "summary": "Registrar una amortización",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AmortizationCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AccountMovement"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Registra un abono sobre la deuda pendiente de una venta al crédito. El monto no puede superar el saldo pendiente; si lo cancela por completo, la cuenta por cobrar pasa a estado `cuenta_cobrada`."
+      }
     },
     "/api/stock-movements": {
-      "get": {"tags": ["Stock movements"], "operationId": "listStockMovements", "parameters": [{"$ref": "#/components/parameters/Page"}, {"name": "product_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "type", "in": "query", "schema": {"type": "string", "enum": ["entrada", "salida"]}}], "responses": {"200": {"$ref": "#/components/responses/StockMovementCollection"}}},
-      "post": {"tags": ["Stock movements"], "operationId": "createManualStockEntry", "summary": "Registra una entrada manual", "description": "El servidor fuerza type=entrada y biller_id=null.", "requestBody": {"$ref": "#/components/requestBodies/StockMovementCreate"}, "responses": {"200": {"$ref": "#/components/responses/StockMovement"}, "422": {"$ref": "#/components/responses/ValidationError"}}}
+      "get": {
+        "tags": [
+          "Stock movements"
+        ],
+        "operationId": "listStockMovements",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra los movimientos del producto indicado.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "Filtra por entrada o salida de inventario.",
+            "schema": {
+              "$ref": "#/components/schemas/StockMovementType"
+            },
+            "example": "entrada"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StockMovementCollection"
+          }
+        },
+        "summary": "Listar movimientos de stock",
+        "description": "Devuelve el kardex paginado, ordenado por fecha de movimiento descendente. Permite filtrar por producto y tipo; cada resultado incluye el producto."
+      },
+      "post": {
+        "tags": [
+          "Stock movements"
+        ],
+        "operationId": "createManualStockEntry",
+        "summary": "Registrar una entrada manual de stock",
+        "description": "Registra una compra o ajuste positivo de inventario. El servidor fuerza `type` a `entrada`, no asocia una venta e incrementa el stock del producto.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/StockMovementCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StockMovement"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
     },
     "/api/stock-movements/{stock_movement}": {
-      "parameters": [{"$ref": "#/components/parameters/StockMovementId"}],
-      "get": {"tags": ["Stock movements"], "operationId": "getStockMovement", "responses": {"200": {"$ref": "#/components/responses/StockMovement"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/StockMovementId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Stock movements"
+        ],
+        "operationId": "getStockMovement",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StockMovement"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Obtener un movimiento de stock",
+        "description": "Devuelve el movimiento de stock identificado por `stock_movement` junto con su producto."
+      }
     },
     "/api/biller-items": {
-      "get": {"tags": ["Billers"], "operationId": "listBillerItems", "parameters": [{"$ref": "#/components/parameters/Page"}, {"name": "biller_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "product_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}], "responses": {"200": {"$ref": "#/components/responses/BillerItemCollection"}}}
+      "get": {
+        "tags": [
+          "Biller items"
+        ],
+        "operationId": "listBillerItems",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "name": "biller_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra las líneas que pertenecen a esta venta.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra las líneas correspondientes a este producto.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BillerItemCollection"
+          }
+        },
+        "summary": "Listar líneas de venta",
+        "description": "Devuelve una página de líneas de venta ordenadas de la más reciente a la más antigua. Permite filtrar por venta y producto; cada resultado incluye el producto."
+      }
     },
     "/api/biller-items/{biller_item}": {
-      "parameters": [{"$ref": "#/components/parameters/BillerItemId"}],
-      "get": {"tags": ["Billers"], "operationId": "getBillerItem", "responses": {"200": {"$ref": "#/components/responses/BillerItem"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/BillerItemId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Biller items"
+        ],
+        "operationId": "getBillerItem",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/BillerItem"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Obtener una línea de venta",
+        "description": "Devuelve la línea identificada por `biller_item` junto con el producto relacionado. Las líneas son de solo lectura."
+      }
     },
     "/api/account-movements": {
-      "get": {"tags": ["Account movements"], "operationId": "listAccountMovements", "parameters": [{"$ref": "#/components/parameters/Page"}, {"name": "account_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "biller_id", "in": "query", "schema": {"type": "integer", "minimum": 1}}, {"name": "status", "in": "query", "schema": {"$ref": "#/components/schemas/AccountMovementStatus"}}, {"name": "type", "in": "query", "schema": {"$ref": "#/components/schemas/AccountMovementType"}}], "responses": {"200": {"$ref": "#/components/responses/AccountMovementCollection"}}}
+      "get": {
+        "tags": [
+          "Account movements"
+        ],
+        "operationId": "listAccountMovements",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra los movimientos asignados a esta cuenta.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "biller_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra los movimientos generados por esta venta.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filtra por estado o motivo contable del movimiento.",
+            "schema": {
+              "$ref": "#/components/schemas/AccountMovementStatus"
+            },
+            "example": "cuenta_por_cobrar"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "Filtra por dirección del dinero.",
+            "schema": {
+              "$ref": "#/components/schemas/AccountMovementType"
+            },
+            "example": "ingreso"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AccountMovementCollection"
+          }
+        },
+        "summary": "Listar movimientos de cuenta",
+        "description": "Devuelve una página de movimientos contables ordenados por fecha descendente. Se puede filtrar por cuenta, venta, estado y dirección del dinero."
+      }
     },
     "/api/account-movements/{account_movement}": {
-      "parameters": [{"$ref": "#/components/parameters/AccountMovementId"}],
-      "get": {"tags": ["Account movements"], "operationId": "getAccountMovement", "responses": {"200": {"$ref": "#/components/responses/AccountMovement"}, "404": {"$ref": "#/components/responses/NotFound"}}}
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/AccountMovementId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Account movements"
+        ],
+        "operationId": "getAccountMovement",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AccountMovement"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "summary": "Obtener un movimiento de cuenta",
+        "description": "Devuelve el movimiento contable identificado por `account_movement` junto con su cuenta cuando está asignada."
+      }
     }
   },
   "components": {
     "parameters": {
-      "Page": {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 1, "default": 1}},
-      "ClientId": {"name": "client", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
-      "AccountId": {"name": "account", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
-      "ProductId": {"name": "product", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
-      "BillerId": {"name": "biller", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
-      "BillerItemId": {"name": "biller_item", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
-      "StockMovementId": {"name": "stock_movement", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
-      "AccountMovementId": {"name": "account_movement", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}
+      "Page": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "description": "Número de página. Cada página contiene hasta 15 registros.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "example": 1
+      },
+      "ClientId": {
+        "name": "client",
+        "in": "path",
+        "required": true,
+        "description": "Identificador único del cliente.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 1
+      },
+      "AccountId": {
+        "name": "account",
+        "in": "path",
+        "required": true,
+        "description": "Identificador único de la cuenta.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 1
+      },
+      "ProductId": {
+        "name": "product",
+        "in": "path",
+        "required": true,
+        "description": "Identificador único del producto.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 1
+      },
+      "BillerId": {
+        "name": "biller",
+        "in": "path",
+        "required": true,
+        "description": "Identificador único de la venta.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 1
+      },
+      "BillerItemId": {
+        "name": "biller_item",
+        "in": "path",
+        "required": true,
+        "description": "Identificador único de la línea de venta.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 1
+      },
+      "StockMovementId": {
+        "name": "stock_movement",
+        "in": "path",
+        "required": true,
+        "description": "Identificador único del movimiento de stock.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 1
+      },
+      "AccountMovementId": {
+        "name": "account_movement",
+        "in": "path",
+        "required": true,
+        "description": "Identificador único del movimiento de cuenta.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 1
+      }
     },
     "requestBodies": {
-      "ClientCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ClientCreate"}}}},
-      "ClientUpdate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ClientUpdate"}}}},
-      "AccountCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountCreate"}}}},
-      "AccountUpdate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountUpdate"}}}},
-      "ProductCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductCreate"}}}},
-      "ProductUpdate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductUpdate"}}}},
-      "BillerCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BillerCreate"}}}},
-      "StockMovementCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StockMovementCreate"}}}},
-      "AmortizationCreate": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AmortizationCreate"}}}}
+      "ClientCreate": {
+        "required": true,
+        "description": "Datos del cliente. `name` y al menos uno entre `dni` y `ruc` son obligatorios.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ClientCreate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "dni": "12345678",
+                  "name": "María Pérez",
+                  "phone": "999888777",
+                  "address": "Av. Principal 123"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ClientUpdate": {
+        "required": true,
+        "description": "Campos del cliente que se desean modificar. Todos son opcionales y solo se actualizan los enviados.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ClientUpdate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "phone": "988777666",
+                  "address": "Jr. Los Olivos 456"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AccountCreate": {
+        "required": true,
+        "description": "Datos de la cuenta. Solo `name` es obligatorio.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountCreate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "name": "Caja principal",
+                  "account_number": "CAJA-001",
+                  "amount": 500,
+                  "description": "Efectivo disponible"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AccountUpdate": {
+        "required": true,
+        "description": "Metadatos que se desean modificar. Todos son opcionales; el saldo `amount` no se admite.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountUpdate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "name": "Caja principal - tienda",
+                  "description": "Efectivo de la tienda"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProductCreate": {
+        "required": true,
+        "description": "Datos del producto. Los precios de venta se calculan en el servidor.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProductCreate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "description": "Arroz extra",
+                  "brand": "Orby",
+                  "measure_unity": "kg",
+                  "unit_price": 4.2,
+                  "percentage_distributor": 5,
+                  "percentage_major": 10,
+                  "percentage_general": 15,
+                  "stock": 100
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProductUpdate": {
+        "required": true,
+        "description": "Campos que se desean modificar. Todos son opcionales; el stock y los precios calculados no se admiten.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProductUpdate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "unit_price": 4.5,
+                  "percentage_general": 18
+                }
+              }
+            }
+          }
+        }
+      },
+      "BillerCreate": {
+        "required": true,
+        "description": "Datos de la venta y sus líneas. Los requisitos de pago dependen de `sale_type`.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BillerCreate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "client_id": 1,
+                  "sale_type": "contado",
+                  "sale_date": "2026-10-20",
+                  "account_id": 1,
+                  "items": [
+                    {
+                      "product_id": 1,
+                      "quantity": 2,
+                      "price_tier": "general"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "StockMovementCreate": {
+        "required": true,
+        "description": "Datos de una entrada manual. `movement_date` es opcional; si se omite se usa la fecha y hora del servidor.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/StockMovementCreate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "product_id": 1,
+                  "quantity": 25,
+                  "movement_date": "2026-10-20T15:30:00-05:00"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AmortizationCreate": {
+        "required": true,
+        "description": "Cuenta receptora, monto y descripción opcional del abono.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AmortizationCreate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "account_id": 1,
+                  "amount": 100,
+                  "description": "Abono por transferencia"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "responses": {
-      "Client": {"description": "Cliente.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Client"}}}},
-      "Account": {"description": "Cuenta.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Account"}}}},
-      "Product": {"description": "Producto.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Product"}}}},
-      "Biller": {"description": "Factura.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Biller"}}}},
-      "BillerItem": {"description": "Línea de factura.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BillerItem"}}}},
-      "StockMovement": {"description": "Movimiento de stock.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StockMovement"}}}},
-      "AccountMovement": {"description": "Movimiento de cuenta.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountMovement"}}}},
-      "ClientCollection": {"description": "Página de clientes.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ClientCollection"}}}},
-      "AccountCollection": {"description": "Página de cuentas.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountCollection"}}}},
-      "ProductCollection": {"description": "Página de productos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ProductCollection"}}}},
-      "BillerCollection": {"description": "Página de facturas.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BillerCollection"}}}},
-      "BillerItemCollection": {"description": "Página de líneas de factura.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BillerItemCollection"}}}},
-      "StockMovementCollection": {"description": "Página de movimientos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/StockMovementCollection"}}}},
-      "AccountMovementCollection": {"description": "Página de movimientos.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AccountMovementCollection"}}}},
-      "NotFound": {"description": "Recurso no encontrado.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
-      "ValidationError": {"description": "Error de validación o regla de negocio.", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ValidationError"}}}}
+      "Client": {
+        "description": "Cliente obtenido, creado o actualizado correctamente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ClientResponse"
+            }
+          }
+        }
+      },
+      "Account": {
+        "description": "Cuenta obtenida, creada o actualizada correctamente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountResponse"
+            }
+          }
+        }
+      },
+      "Product": {
+        "description": "Producto obtenido, creado o actualizado correctamente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProductResponse"
+            }
+          }
+        }
+      },
+      "Biller": {
+        "description": "Venta obtenida o registrada correctamente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BillerResponse"
+            }
+          }
+        }
+      },
+      "BillerItem": {
+        "description": "Línea de venta obtenida correctamente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BillerItemResponse"
+            }
+          }
+        }
+      },
+      "StockMovement": {
+        "description": "Movimiento de stock obtenido o registrado correctamente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/StockMovementResponse"
+            }
+          }
+        }
+      },
+      "AccountMovement": {
+        "description": "Movimiento de cuenta obtenido o registrado correctamente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountMovementResponse"
+            }
+          }
+        }
+      },
+      "ClientCollection": {
+        "description": "Página de clientes.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ClientCollection"
+            }
+          }
+        }
+      },
+      "AccountCollection": {
+        "description": "Página de cuentas.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountCollection"
+            }
+          }
+        }
+      },
+      "ProductCollection": {
+        "description": "Página de productos.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProductCollection"
+            }
+          }
+        }
+      },
+      "BillerCollection": {
+        "description": "Página de ventas.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BillerCollection"
+            }
+          }
+        }
+      },
+      "BillerItemCollection": {
+        "description": "Página de líneas de venta.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BillerItemCollection"
+            }
+          }
+        }
+      },
+      "StockMovementCollection": {
+        "description": "Página de movimientos de stock.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/StockMovementCollection"
+            }
+          }
+        }
+      },
+      "AccountMovementCollection": {
+        "description": "Página de movimientos de cuenta.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountMovementCollection"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "El recurso solicitado no existe.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "La solicitud no cumple las reglas de validación o de negocio.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      }
     },
     "schemas": {
-      "Decimal": {"type": "string", "pattern": "^-?\\d+\\.\\d{2}$", "examples": ["125.50"]},
-      "Timestamp": {"type": "string", "format": "date-time"},
-      "Client": {"type": "object", "properties": {"id": {"type": "integer", "readOnly": true}, "dni": {"type": ["string", "null"], "maxLength": 8}, "name": {"type": "string", "maxLength": 255}, "ruc": {"type": ["string", "null"], "maxLength": 11}, "phone": {"type": ["string", "null"], "maxLength": 20}, "address": {"type": ["string", "null"], "maxLength": 255}, "created_at": {"$ref": "#/components/schemas/Timestamp"}, "updated_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "name", "created_at", "updated_at"]},
-      "Account": {"type": "object", "properties": {"id": {"type": "integer", "readOnly": true}, "name": {"type": "string"}, "account_number": {"type": ["string", "null"]}, "amount": {"$ref": "#/components/schemas/Decimal"}, "description": {"type": ["string", "null"]}, "created_at": {"$ref": "#/components/schemas/Timestamp"}, "updated_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "name", "amount", "created_at", "updated_at"]},
-      "Product": {"type": "object", "properties": {"id": {"type": "integer", "readOnly": true}, "description": {"type": "string"}, "brand": {"type": ["string", "null"]}, "measure_unity": {"type": "string"}, "unit_price": {"$ref": "#/components/schemas/Decimal"}, "percentage_distributor": {"$ref": "#/components/schemas/Decimal"}, "price_distributor": {"$ref": "#/components/schemas/Decimal"}, "percentage_major": {"$ref": "#/components/schemas/Decimal"}, "price_major": {"$ref": "#/components/schemas/Decimal"}, "percentage_general": {"$ref": "#/components/schemas/Decimal"}, "price_general": {"$ref": "#/components/schemas/Decimal"}, "stock": {"$ref": "#/components/schemas/Decimal"}, "created_at": {"$ref": "#/components/schemas/Timestamp"}, "updated_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "description", "measure_unity", "unit_price", "stock", "created_at", "updated_at"]},
-      "BillerItem": {"type": "object", "properties": {"id": {"type": "integer"}, "biller_id": {"type": "integer"}, "product_id": {"type": "integer"}, "quantity": {"$ref": "#/components/schemas/Decimal"}, "unit_price": {"$ref": "#/components/schemas/Decimal"}, "subtotal": {"$ref": "#/components/schemas/Decimal"}, "product": {"$ref": "#/components/schemas/Product"}}, "required": ["id", "biller_id", "product_id", "quantity", "unit_price", "subtotal"]},
-      "AccountMovementType": {"type": "string", "enum": ["ingreso", "egreso"]},
-      "AccountMovementStatus": {"type": "string", "enum": ["cuenta_cobrada", "cuenta_pagada", "cuenta_por_cobrar", "cuenta_por_pagar", "amortizacion"]},
-      "AccountMovement": {"type": "object", "properties": {"id": {"type": "integer"}, "amount": {"$ref": "#/components/schemas/Decimal"}, "movement_date": {"$ref": "#/components/schemas/Timestamp"}, "type": {"$ref": "#/components/schemas/AccountMovementType"}, "status": {"$ref": "#/components/schemas/AccountMovementStatus"}, "description": {"type": ["string", "null"]}, "account_id": {"type": ["integer", "null"]}, "biller_id": {"type": "integer"}, "account": {"$ref": "#/components/schemas/Account"}}, "required": ["id", "amount", "movement_date", "type", "status", "biller_id"]},
-      "Biller": {"type": "object", "properties": {"id": {"type": "integer"}, "sale_date": {"type": "string", "format": "date"}, "payment_date": {"type": ["string", "null"], "format": "date"}, "sale_type": {"type": "string", "enum": ["contado", "credito"]}, "subtotal": {"$ref": "#/components/schemas/Decimal"}, "igv": {"$ref": "#/components/schemas/Decimal"}, "total": {"$ref": "#/components/schemas/Decimal"}, "client_id": {"type": "integer"}, "account_id": {"type": ["integer", "null"]}, "client": {"$ref": "#/components/schemas/Client"}, "items": {"type": "array", "items": {"$ref": "#/components/schemas/BillerItem"}}, "account_movements": {"type": "array", "items": {"$ref": "#/components/schemas/AccountMovement"}}, "created_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "sale_date", "sale_type", "subtotal", "igv", "total", "client_id", "created_at"]},
-      "StockMovement": {"type": "object", "properties": {"id": {"type": "integer"}, "type": {"type": "string", "enum": ["entrada", "salida"]}, "quantity": {"$ref": "#/components/schemas/Decimal"}, "movement_date": {"$ref": "#/components/schemas/Timestamp"}, "product_id": {"type": "integer"}, "biller_id": {"type": ["integer", "null"]}, "product": {"$ref": "#/components/schemas/Product"}, "created_at": {"$ref": "#/components/schemas/Timestamp"}}, "required": ["id", "type", "quantity", "movement_date", "product_id", "created_at"]},
-      "ClientCreate": {"type": "object", "properties": {"dni": {"type": ["string", "null"], "maxLength": 8}, "name": {"type": "string"}, "ruc": {"type": ["string", "null"], "maxLength": 11}, "phone": {"type": ["string", "null"]}, "address": {"type": ["string", "null"]}}, "required": ["name"], "anyOf": [{"required": ["dni"]}, {"required": ["ruc"]}], "example": {"dni": "12345678", "name": "María Pérez"}},
-      "ClientUpdate": {"type": "object", "properties": {"dni": {"type": ["string", "null"], "maxLength": 8}, "name": {"type": "string"}, "ruc": {"type": ["string", "null"], "maxLength": 11}, "phone": {"type": ["string", "null"]}, "address": {"type": ["string", "null"]}}},
-      "AccountCreate": {"type": "object", "properties": {"name": {"type": "string"}, "account_number": {"type": ["string", "null"]}, "amount": {"type": "number", "minimum": 0}, "description": {"type": ["string", "null"]}}, "required": ["name"], "example": {"name": "Caja principal", "amount": 500}},
-      "AccountUpdate": {"type": "object", "properties": {"name": {"type": "string"}, "account_number": {"type": ["string", "null"]}, "description": {"type": ["string", "null"]}}, "additionalProperties": false},
-      "ProductCreate": {"type": "object", "properties": {"description": {"type": "string"}, "brand": {"type": ["string", "null"]}, "measure_unity": {"type": "string", "maxLength": 20}, "unit_price": {"type": "number", "minimum": 0}, "percentage_distributor": {"type": "number", "minimum": 0, "maximum": 100}, "percentage_major": {"type": "number", "minimum": 0, "maximum": 100}, "percentage_general": {"type": "number", "minimum": 0, "maximum": 100}, "stock": {"type": "number", "minimum": 0}}, "required": ["description", "measure_unity", "unit_price"]},
-      "ProductUpdate": {"type": "object", "properties": {"description": {"type": "string"}, "brand": {"type": ["string", "null"]}, "measure_unity": {"type": "string", "maxLength": 20}, "unit_price": {"type": "number", "minimum": 0}, "percentage_distributor": {"type": "number", "minimum": 0, "maximum": 100}, "percentage_major": {"type": "number", "minimum": 0, "maximum": 100}, "percentage_general": {"type": "number", "minimum": 0, "maximum": 100}}, "additionalProperties": false},
-      "BillerCreate": {"type": "object", "properties": {"client_id": {"type": "integer", "minimum": 1}, "sale_type": {"type": "string", "enum": ["contado", "credito"]}, "sale_date": {"type": "string", "format": "date"}, "payment_date": {"type": ["string", "null"], "format": "date"}, "account_id": {"type": ["integer", "null"], "description": "Obligatoria para contado y crédito con pago inicial."}, "initial_payment": {"type": ["number", "null"], "exclusiveMinimum": 0, "description": "Solo en crédito."}, "items": {"type": "array", "minItems": 1, "items": {"type": "object", "properties": {"product_id": {"type": "integer", "minimum": 1}, "quantity": {"type": "number", "exclusiveMinimum": 0}, "price_tier": {"type": "string", "enum": ["distributor", "major", "general"]}}, "required": ["product_id", "quantity", "price_tier"]}}}, "required": ["client_id", "sale_type", "sale_date", "items"], "example": {"client_id": 1, "sale_type": "contado", "sale_date": "2026-10-20", "account_id": 1, "items": [{"product_id": 1, "quantity": 2, "price_tier": "general"}]}},
-      "StockMovementCreate": {"type": "object", "properties": {"product_id": {"type": "integer", "minimum": 1}, "quantity": {"type": "number", "exclusiveMinimum": 0}, "movement_date": {"type": "string", "format": "date-time"}}, "required": ["product_id", "quantity"]},
-      "AmortizationCreate": {"type": "object", "properties": {"account_id": {"type": "integer", "minimum": 1}, "amount": {"type": "number", "exclusiveMinimum": 0}, "description": {"type": ["string", "null"]}}, "required": ["account_id", "amount"]},
-      "CollectionBase": {"type": "object", "properties": {"data": {"type": "array"}, "links": {"type": "object"}, "meta": {"type": "object"}}, "required": ["data", "links", "meta"]},
-      "ClientCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Client"}}}}]},
-      "AccountCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Account"}}}}]},
-      "ProductCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Product"}}}}]},
-      "BillerCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Biller"}}}}]},
-      "BillerItemCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/BillerItem"}}}}]},
-      "StockMovementCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/StockMovement"}}}}]},
-      "AccountMovementCollection": {"allOf": [{"$ref": "#/components/schemas/CollectionBase"}, {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/AccountMovement"}}}}]},
-      "Error": {"type": "object", "properties": {"message": {"type": "string"}}, "required": ["message"]},
-      "ValidationError": {"type": "object", "properties": {"message": {"type": "string"}, "errors": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}}, "required": ["message", "errors"]}
+      "Decimal": {
+        "type": "string",
+        "pattern": "^-?\\d+\\.\\d{2}$",
+        "description": "Valor decimal serializado con exactamente dos posiciones.",
+        "examples": [
+          "125.50"
+        ]
+      },
+      "Timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Fecha y hora en formato ISO 8601.",
+        "examples": [
+          "2026-10-20T15:30:00.000000Z"
+        ]
+      },
+      "SaleType": {
+        "type": "string",
+        "enum": [
+          "contado",
+          "credito"
+        ],
+        "description": "`contado`: pago total inmediato. `credito`: genera una cuenta por cobrar y puede incluir un pago inicial."
+      },
+      "PriceTier": {
+        "type": "string",
+        "enum": [
+          "distributor",
+          "major",
+          "general"
+        ],
+        "description": "Nivel de precio aplicado a la línea: distribuidor, mayorista o general."
+      },
+      "StockMovementType": {
+        "type": "string",
+        "enum": [
+          "entrada",
+          "salida"
+        ],
+        "description": "Dirección del movimiento de inventario."
+      },
+      "AccountMovementType": {
+        "type": "string",
+        "enum": [
+          "ingreso",
+          "egreso"
+        ],
+        "description": "Dirección del dinero respecto de la cuenta."
+      },
+      "AccountMovementStatus": {
+        "type": "string",
+        "enum": [
+          "cuenta_cobrada",
+          "cuenta_pagada",
+          "cuenta_por_cobrar",
+          "cuenta_por_pagar",
+          "amortizacion"
+        ],
+        "description": "Estado o motivo contable del movimiento."
+      },
+      "Client": {
+        "type": "object",
+        "description": "Cliente registrado.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true,
+            "description": "Identificador único del cliente.",
+            "examples": [
+              1
+            ]
+          },
+          "dni": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 8,
+            "description": "Documento Nacional de Identidad.",
+            "examples": [
+              "12345678"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Nombre o razón social.",
+            "examples": [
+              "María Pérez"
+            ]
+          },
+          "ruc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 11,
+            "description": "Registro Único de Contribuyentes.",
+            "examples": [
+              "20123456789"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "description": "Teléfono de contacto.",
+            "examples": [
+              "999888777"
+            ]
+          },
+          "address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "Dirección del cliente.",
+            "examples": [
+              "Av. Principal 123"
+            ]
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "dni",
+          "name",
+          "ruc",
+          "phone",
+          "address",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "Account": {
+        "type": "object",
+        "description": "Cuenta de dinero con su saldo actual.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true,
+            "description": "Identificador único de la cuenta.",
+            "examples": [
+              1
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Nombre de la cuenta.",
+            "examples": [
+              "Caja principal"
+            ]
+          },
+          "account_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50,
+            "description": "Número o código único de la cuenta.",
+            "examples": [
+              "CAJA-001"
+            ]
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Decimal"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Detalle libre de la cuenta.",
+            "examples": [
+              "Efectivo disponible"
+            ]
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "account_number",
+          "amount",
+          "description",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "Product": {
+        "type": "object",
+        "description": "Producto con precios calculados y stock disponible.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true,
+            "description": "Identificador único del producto.",
+            "examples": [
+              1
+            ]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Nombre o descripción comercial.",
+            "examples": [
+              "Arroz extra"
+            ]
+          },
+          "brand": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "Marca del producto.",
+            "examples": [
+              "Orby"
+            ]
+          },
+          "measure_unity": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Unidad de medida.",
+            "examples": [
+              "kg"
+            ]
+          },
+          "unit_price": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Costo o precio base del producto.",
+            "examples": [
+              "4.20"
+            ]
+          },
+          "percentage_distributor": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Margen porcentual para el nivel distribuidor.",
+            "examples": [
+              "5.00"
+            ]
+          },
+          "price_distributor": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Precio calculado para el nivel distribuidor.",
+            "examples": [
+              "4.41"
+            ]
+          },
+          "percentage_major": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Margen porcentual para el nivel mayorista.",
+            "examples": [
+              "10.00"
+            ]
+          },
+          "price_major": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Precio calculado para el nivel mayorista.",
+            "examples": [
+              "4.62"
+            ]
+          },
+          "percentage_general": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Margen porcentual para el nivel general.",
+            "examples": [
+              "15.00"
+            ]
+          },
+          "price_general": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Precio calculado para el nivel general.",
+            "examples": [
+              "4.83"
+            ]
+          },
+          "stock": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Cantidad disponible en inventario.",
+            "examples": [
+              "100.00"
+            ]
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "brand",
+          "measure_unity",
+          "unit_price",
+          "percentage_distributor",
+          "price_distributor",
+          "percentage_major",
+          "price_major",
+          "percentage_general",
+          "price_general",
+          "stock",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "BillerItem": {
+        "type": "object",
+        "description": "Línea inmutable de una venta.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true,
+            "description": "Identificador único de la línea.",
+            "examples": [
+              1
+            ]
+          },
+          "biller_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Venta a la que pertenece.",
+            "examples": [
+              1
+            ]
+          },
+          "product_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Producto vendido.",
+            "examples": [
+              1
+            ]
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Cantidad vendida.",
+            "examples": [
+              "2.00"
+            ]
+          },
+          "unit_price": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Precio unitario resuelto según el nivel solicitado.",
+            "examples": [
+              "4.83"
+            ]
+          },
+          "subtotal": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Cantidad multiplicada por el precio unitario.",
+            "examples": [
+              "9.66"
+            ]
+          },
+          "product": {
+            "$ref": "#/components/schemas/Product"
+          }
+        },
+        "required": [
+          "id",
+          "biller_id",
+          "product_id",
+          "quantity",
+          "unit_price",
+          "subtotal"
+        ]
+      },
+      "AccountMovement": {
+        "type": "object",
+        "description": "Movimiento del libro de cuentas.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true,
+            "description": "Identificador único del movimiento.",
+            "examples": [
+              1
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Importe del movimiento.",
+            "examples": [
+              "100.00"
+            ]
+          },
+          "movement_date": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AccountMovementType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AccountMovementStatus"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Concepto del movimiento.",
+            "examples": [
+              "Abono por transferencia"
+            ]
+          },
+          "account_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "Cuenta afectada. Es `null` mientras una cuenta por cobrar aún no tiene cuenta receptora.",
+            "examples": [
+              1
+            ]
+          },
+          "biller_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Venta que originó el movimiento.",
+            "examples": [
+              1
+            ]
+          },
+          "account": {
+            "$ref": "#/components/schemas/Account"
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "movement_date",
+          "type",
+          "status",
+          "description",
+          "account_id",
+          "biller_id"
+        ]
+      },
+      "Biller": {
+        "type": "object",
+        "description": "Venta registrada y sus totales calculados.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true,
+            "description": "Identificador único de la venta.",
+            "examples": [
+              1
+            ]
+          },
+          "sale_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Fecha de la venta serializada por Laravel en ISO 8601.",
+            "examples": [
+              "2026-10-20T15:30:00.000000Z"
+            ]
+          },
+          "payment_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Fecha de pago. En ventas al contado se toma la fecha de venta; puede ser nula en ventas al crédito.",
+            "examples": [
+              "2026-10-20T00:00:00.000000Z"
+            ]
+          },
+          "sale_type": {
+            "$ref": "#/components/schemas/SaleType"
+          },
+          "subtotal": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Suma de los subtotales de las líneas, antes de IGV.",
+            "examples": [
+              "100.00"
+            ]
+          },
+          "igv": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "IGV calculado al 18 %.",
+            "examples": [
+              "18.00"
+            ]
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Subtotal más IGV.",
+            "examples": [
+              "118.00"
+            ]
+          },
+          "client_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Cliente de la venta.",
+            "examples": [
+              1
+            ]
+          },
+          "account_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "Cuenta de pago en ventas al contado. Es `null` en ventas al crédito.",
+            "examples": [
+              1
+            ]
+          },
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "items": {
+            "type": "array",
+            "description": "Líneas de la venta; se incluyen en la consulta individual y al crear.",
+            "items": {
+              "$ref": "#/components/schemas/BillerItem"
+            }
+          },
+          "account_movements": {
+            "type": "array",
+            "description": "Movimientos contables generados; se incluyen en la consulta individual y al crear.",
+            "items": {
+              "$ref": "#/components/schemas/AccountMovement"
+            }
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "sale_date",
+          "payment_date",
+          "sale_type",
+          "subtotal",
+          "igv",
+          "total",
+          "client_id",
+          "account_id",
+          "created_at"
+        ]
+      },
+      "StockMovement": {
+        "type": "object",
+        "description": "Movimiento inmutable del kardex.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true,
+            "description": "Identificador único del movimiento.",
+            "examples": [
+              1
+            ]
+          },
+          "type": {
+            "$ref": "#/components/schemas/StockMovementType"
+          },
+          "quantity": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Cantidad ingresada o retirada.",
+            "examples": [
+              "25.00"
+            ]
+          },
+          "movement_date": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "product_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Producto afectado.",
+            "examples": [
+              1
+            ]
+          },
+          "biller_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "Venta que originó la salida; es `null` para entradas manuales.",
+            "examples": [
+              1
+            ]
+          },
+          "product": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "quantity",
+          "movement_date",
+          "product_id",
+          "biller_id",
+          "created_at"
+        ]
+      },
+      "ClientCreate": {
+        "type": "object",
+        "description": "`name` es obligatorio. Además, se debe enviar un `dni` no nulo, un `ruc` no nulo o ambos.",
+        "additionalProperties": false,
+        "properties": {
+          "dni": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 8,
+            "description": "Condicional: obligatorio cuando no se proporciona `ruc`.",
+            "examples": [
+              "12345678"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Obligatorio. Nombre o razón social.",
+            "examples": [
+              "María Pérez"
+            ]
+          },
+          "ruc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 11,
+            "description": "Condicional: obligatorio cuando no se proporciona `dni`.",
+            "examples": [
+              "20123456789"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "description": "Opcional. Teléfono de contacto.",
+            "examples": [
+              "999888777"
+            ]
+          },
+          "address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "Opcional. Dirección.",
+            "examples": [
+              "Av. Principal 123"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "anyOf": [
+          {
+            "required": [
+              "dni"
+            ],
+            "properties": {
+              "dni": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8
+              }
+            }
+          },
+          {
+            "required": [
+              "ruc"
+            ],
+            "properties": {
+              "ruc": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 11
+              }
+            }
+          }
+        ]
+      },
+      "ClientUpdate": {
+        "type": "object",
+        "description": "Actualización parcial: todos los campos son opcionales. `dni` y `ruc` deben conservar su unicidad cuando se envían.",
+        "additionalProperties": false,
+        "properties": {
+          "dni": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 8,
+            "description": "Opcional. Nuevo DNI o `null` para borrarlo.",
+            "examples": [
+              "12345678"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Opcional. Si se envía, no puede ser nulo ni vacío.",
+            "examples": [
+              "María Pérez"
+            ]
+          },
+          "ruc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 11,
+            "description": "Opcional. Nuevo RUC o `null` para borrarlo.",
+            "examples": [
+              "20123456789"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "description": "Opcional. Teléfono o `null` para borrarlo.",
+            "examples": [
+              "999888777"
+            ]
+          },
+          "address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "Opcional. Dirección o `null` para borrarla.",
+            "examples": [
+              "Av. Principal 123"
+            ]
+          }
+        }
+      },
+      "AccountCreate": {
+        "type": "object",
+        "description": "Solo `name` es obligatorio.",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Obligatorio. Nombre de la cuenta.",
+            "examples": [
+              "Caja principal"
+            ]
+          },
+          "account_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50,
+            "description": "Opcional. Número o código único.",
+            "examples": [
+              "CAJA-001"
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Opcional. Saldo inicial; si se omite, es 0. No se puede editar después.",
+            "examples": [
+              500
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opcional. Detalle libre.",
+            "examples": [
+              "Efectivo disponible"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "AccountUpdate": {
+        "type": "object",
+        "description": "Actualización parcial: todos los campos son opcionales. `amount` no se admite porque el saldo solo cambia mediante movimientos.",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Opcional. Si se envía, no puede ser nulo ni vacío.",
+            "examples": [
+              "Caja principal"
+            ]
+          },
+          "account_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 50,
+            "description": "Opcional. Código único o `null` para borrarlo.",
+            "examples": [
+              "CAJA-001"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opcional. Detalle o `null` para borrarlo.",
+            "examples": [
+              "Efectivo disponible"
+            ]
+          }
+        }
+      },
+      "ProductCreate": {
+        "type": "object",
+        "description": "`description`, `measure_unity` y `unit_price` son obligatorios. Los precios por nivel se calculan en el servidor.",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Obligatorio. Nombre o descripción comercial.",
+            "examples": [
+              "Arroz extra"
+            ]
+          },
+          "brand": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "Opcional. Marca.",
+            "examples": [
+              "Orby"
+            ]
+          },
+          "measure_unity": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Obligatorio. Unidad de medida.",
+            "examples": [
+              "kg"
+            ]
+          },
+          "unit_price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Obligatorio. Costo o precio base.",
+            "examples": [
+              4.2
+            ]
+          },
+          "percentage_distributor": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "default": 0,
+            "description": "Opcional. Margen porcentual de distribuidor.",
+            "examples": [
+              5
+            ]
+          },
+          "percentage_major": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "default": 0,
+            "description": "Opcional. Margen porcentual mayorista.",
+            "examples": [
+              10
+            ]
+          },
+          "percentage_general": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "default": 0,
+            "description": "Opcional. Margen porcentual general.",
+            "examples": [
+              15
+            ]
+          },
+          "stock": {
+            "type": "number",
+            "minimum": 0,
+            "default": 0,
+            "description": "Opcional. Stock inicial; después solo cambia mediante movimientos.",
+            "examples": [
+              100
+            ]
+          }
+        },
+        "required": [
+          "description",
+          "measure_unity",
+          "unit_price"
+        ]
+      },
+      "ProductUpdate": {
+        "type": "object",
+        "description": "Actualización parcial: todos los campos son opcionales. `stock` y los campos `price_*` no se admiten.",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Opcional. Si se envía, no puede ser nulo ni vacío.",
+            "examples": [
+              "Arroz extra"
+            ]
+          },
+          "brand": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "Opcional. Marca o `null` para borrarla.",
+            "examples": [
+              "Orby"
+            ]
+          },
+          "measure_unity": {
+            "type": "string",
+            "maxLength": 20,
+            "description": "Opcional. Si se envía, no puede ser nula ni vacía.",
+            "examples": [
+              "kg"
+            ]
+          },
+          "unit_price": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Opcional. Nuevo precio base; recalcula los precios por nivel.",
+            "examples": [
+              4.5
+            ]
+          },
+          "percentage_distributor": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Opcional. Nuevo margen de distribuidor.",
+            "examples": [
+              5
+            ]
+          },
+          "percentage_major": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Opcional. Nuevo margen mayorista.",
+            "examples": [
+              10
+            ]
+          },
+          "percentage_general": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Opcional. Nuevo margen general.",
+            "examples": [
+              18
+            ]
+          }
+        }
+      },
+      "BillerItemCreate": {
+        "type": "object",
+        "description": "Línea de venta. Sus tres campos son obligatorios.",
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Obligatorio. Producto existente. No se puede repetir en la misma venta.",
+            "examples": [
+              1
+            ]
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 0.01,
+            "description": "Obligatorio. Cantidad solicitada; no puede superar el stock disponible.",
+            "examples": [
+              2
+            ]
+          },
+          "price_tier": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PriceTier"
+              }
+            ],
+            "description": "Obligatorio. Nivel utilizado para resolver el precio unitario."
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "price_tier"
+        ]
+      },
+      "BillerCreate": {
+        "type": "object",
+        "description": "`client_id`, `sale_type`, `sale_date` e `items` son siempre obligatorios.\n\n- Para `contado`, `account_id` también es obligatorio y `initial_payment` está prohibido.\n- Para `credito`, `account_id` solo es obligatorio si se envía `initial_payment`.",
+        "additionalProperties": false,
+        "properties": {
+          "client_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Obligatorio. Cliente existente.",
+            "examples": [
+              1
+            ]
+          },
+          "sale_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SaleType"
+              }
+            ],
+            "description": "Obligatorio. Modalidad de la venta."
+          },
+          "sale_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Obligatorio. Fecha de venta.",
+            "examples": [
+              "2026-10-20"
+            ]
+          },
+          "payment_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Opcional. Debe ser igual o posterior a `sale_date`. En contado, si se omite, se usa `sale_date`.",
+            "examples": [
+              "2026-11-20"
+            ]
+          },
+          "account_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "Condicional. Obligatoria en contado y en crédito cuando existe `initial_payment`.",
+            "examples": [
+              1
+            ]
+          },
+          "initial_payment": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0.01,
+            "description": "Opcional solo para crédito. Debe ser mayor o igual a 0.01 y no superar el total calculado.",
+            "examples": [
+              50
+            ]
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Obligatorio. Una o más líneas; un producto no puede repetirse.",
+            "items": {
+              "$ref": "#/components/schemas/BillerItemCreate"
+            }
+          }
+        },
+        "required": [
+          "client_id",
+          "sale_type",
+          "sale_date",
+          "items"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "sale_type": {
+                  "const": "contado"
+                }
+              },
+              "required": [
+                "sale_type"
+              ]
+            },
+            "then": {
+              "required": [
+                "account_id"
+              ],
+              "properties": {
+                "account_id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "initial_payment": false
+              }
+            },
+            "else": {
+              "if": {
+                "required": [
+                  "initial_payment"
+                ],
+                "properties": {
+                  "initial_payment": {
+                    "type": "number"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "account_id"
+                ],
+                "properties": {
+                  "account_id": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "StockMovementCreate": {
+        "type": "object",
+        "description": "`product_id` y `quantity` son obligatorios. `type` y `biller_id` no se aceptan: el servidor crea siempre una entrada manual sin venta asociada.",
+        "additionalProperties": false,
+        "properties": {
+          "product_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Obligatorio. Producto existente.",
+            "examples": [
+              1
+            ]
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 0.01,
+            "description": "Obligatorio. Cantidad que se sumará al stock.",
+            "examples": [
+              25
+            ]
+          },
+          "movement_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Opcional. Fecha y hora del movimiento; si se omite o es nula se usa la hora del servidor.",
+            "examples": [
+              "2026-10-20T15:30:00-05:00"
+            ]
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity"
+        ]
+      },
+      "AmortizationCreate": {
+        "type": "object",
+        "description": "`account_id` y `amount` son obligatorios. La venta debe tener deuda pendiente.",
+        "additionalProperties": false,
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Obligatorio. Cuenta existente que recibe el abono.",
+            "examples": [
+              1
+            ]
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0.01,
+            "description": "Obligatorio. Abono que no puede superar la deuda pendiente.",
+            "examples": [
+              100
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opcional. Concepto del abono.",
+            "examples": [
+              "Abono por transferencia"
+            ]
+          }
+        },
+        "required": [
+          "account_id",
+          "amount"
+        ]
+      },
+      "PaginationLinks": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "first": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL de la primera página."
+          },
+          "last": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL de la última página."
+          },
+          "prev": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri",
+            "description": "URL de la página anterior."
+          },
+          "next": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri",
+            "description": "URL de la página siguiente."
+          }
+        },
+        "required": [
+          "first",
+          "last",
+          "prev",
+          "next"
+        ]
+      },
+      "PaginationMetaLink": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uri"
+          },
+          "label": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "url",
+          "label",
+          "active"
+        ]
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "from": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "last_page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaginationMetaLink"
+            }
+          },
+          "path": {
+            "type": "string",
+            "format": "uri"
+          },
+          "per_page": {
+            "type": "integer",
+            "const": 15
+          },
+          "to": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "current_page",
+          "from",
+          "last_page",
+          "links",
+          "path",
+          "per_page",
+          "to",
+          "total"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Descripción del error."
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "examples": [
+          {
+            "message": "No query results for model."
+          }
+        ]
+      },
+      "ValidationError": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Resumen del error de validación.",
+            "examples": [
+              "The given data was invalid."
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "description": "Mensajes agrupados por campo.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "examples": [
+              {
+                "amount": [
+                  "El monto amortizado no puede superar la deuda pendiente."
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "message",
+          "errors"
+        ]
+      },
+      "ClientResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Client"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ClientCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Client"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "links",
+          "meta"
+        ]
+      },
+      "AccountResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Account"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "AccountCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Account"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "links",
+          "meta"
+        ]
+      },
+      "ProductResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Product"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ProductCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "links",
+          "meta"
+        ]
+      },
+      "BillerResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Biller"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "BillerCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Biller"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "links",
+          "meta"
+        ]
+      },
+      "BillerItemResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BillerItem"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "BillerItemCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BillerItem"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "links",
+          "meta"
+        ]
+      },
+      "StockMovementResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/StockMovement"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "StockMovementCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockMovement"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "links",
+          "meta"
+        ]
+      },
+      "AccountMovementResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AccountMovement"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "AccountMovementCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountMovement"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "links",
+          "meta"
+        ]
+      }
     }
-  }
+  },
+  "jsonSchemaDialect": "https://spec.openapis.org/oas/3.1/dialect/base"
 }
