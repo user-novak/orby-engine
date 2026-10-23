@@ -85,7 +85,7 @@
             "$ref": "#/components/responses/ValidationError"
           }
         },
-        "description": "Crea un cliente. Se debe proporcionar al menos un documento de identidad: `dni` o `ruc`."
+        "description": "Crea un cliente. Solo `name` es obligatorio; `dni` y `ruc` son opcionales."
       }
     },
     "/api/clients/{client}": {
@@ -1876,7 +1876,7 @@
       },
       "ClientCreate": {
         "type": "object",
-        "description": "`name` es obligatorio. Además, se debe enviar un `dni` no nulo, un `ruc` no nulo o ambos.",
+        "description": "Solo `name` es obligatorio; `dni` y `ruc` son opcionales.",
         "additionalProperties": false,
         "properties": {
           "dni": {
@@ -1885,7 +1885,7 @@
               "null"
             ],
             "maxLength": 8,
-            "description": "Condicional: obligatorio cuando no se proporciona `ruc`.",
+            "description": "Opcional. DNI del cliente.",
             "examples": [
               "12345678"
             ]
@@ -1904,7 +1904,7 @@
               "null"
             ],
             "maxLength": 11,
-            "description": "Condicional: obligatorio cuando no se proporciona `dni`.",
+            "description": "Opcional. RUC del cliente.",
             "examples": [
               "20123456789"
             ]
@@ -1934,32 +1934,6 @@
         },
         "required": [
           "name"
-        ],
-        "anyOf": [
-          {
-            "required": [
-              "dni"
-            ],
-            "properties": {
-              "dni": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 8
-              }
-            }
-          },
-          {
-            "required": [
-              "ruc"
-            ],
-            "properties": {
-              "ruc": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 11
-              }
-            }
-          }
         ]
       },
       "ClientUpdate": {
