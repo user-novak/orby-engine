@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StoreAccountRequest;
 use App\Http\Requests\UpdateAccountRequest;
+use App\Http\Requests\IndexAccountRequest;
 use App\Http\Resources\AccountResource;
 use App\Models\Account;
 use App\Services\AccountService;
@@ -17,10 +18,10 @@ class AccountController extends Controller
     {
     }
 
-    public function index(): AnonymousResourceCollection
+    public function index(IndexAccountRequest $request): AnonymousResourceCollection
     {
         return AccountResource::collection(
-            Account::query()->latest()->paginate()
+            Account::query()->latest()->latest('id')->paginate($request->integer('per_page', 15))
         );
     }
 
