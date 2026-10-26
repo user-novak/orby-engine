@@ -21,7 +21,10 @@ class AccountController extends Controller
     public function index(IndexAccountRequest $request): AnonymousResourceCollection
     {
         return AccountResource::collection(
-            Account::query()->latest()->latest('id')->paginate($request->integer('per_page', 15))
+            Account::query()
+                ->latest()
+                ->latest('id')
+                ->paginate($request->integer('per_page', 15))
         );
     }
 

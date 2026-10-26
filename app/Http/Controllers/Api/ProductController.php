@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Http\Requests\IndexProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Services\ProductService;
@@ -17,10 +18,13 @@ class ProductController extends Controller
     {
     }
 
-    public function index(): AnonymousResourceCollection
+    public function index(IndexProductRequest $request): AnonymousResourceCollection
     {
         return ProductResource::collection(
-            Product::query()->latest()->paginate()
+            Product::query()
+                ->latest()
+                ->latest('id')
+                ->paginate($request->integer('per_page', 15))
         );
     }
 
