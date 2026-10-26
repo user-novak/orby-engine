@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
+use App\Http\Requests\IndexClientRequest;
 use App\Http\Resources\ClientResource;
 use App\Models\Client;
 use App\Services\ClientService;
@@ -17,10 +18,13 @@ class ClientController extends Controller
     {
     }
 
-    public function index(): AnonymousResourceCollection
+    public function index(IndexClientRequest $request): AnonymousResourceCollection
     {
         return ClientResource::collection(
-            Client::query()->latest()->paginate()
+        Client::query()
+            ->latest()
+            ->latest('id')
+            ->paginate($request->integer('per_page', 15))
         );
     }
 
