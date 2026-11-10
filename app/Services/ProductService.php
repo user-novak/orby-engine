@@ -3,17 +3,21 @@
 namespace App\Services;
 
 use App\Models\Product;
+use Illuminate\Validation\ValidationException;
 
 class ProductService
 {
     public function create(array $data): Product
     {
-        return Product::create($this->withCalculatedPrices(null, $data));
+        $this->validatePrices(null, $data);
+
+        return Product::create($data);
     }
 
     public function update(Product $product, array $data): Product
     {
-        $product->update($this->withCalculatedPrices($product, $data));
+        $this->validatePrices($product, $data);
+        $product->update($data);
 
         return $product->refresh();
     }
@@ -23,13 +27,7 @@ class ProductService
         $product->delete();
     }
 
-    /**
-     * price_distributor / price_major / price_general nunca los pone el usuario:
-     * se derivan de unit_price + el percentage_* correspondiente. Si el update es
-     * parcial (PATCH) y no manda unit_price o algún percentage_*, usamos el valor
-     * que el producto ya tiene guardado para ese cálculo.
-     */
-    private function withCalculatedPrices(?Product $existing, array $data): array
+    private function validatePrices(?Product $existing, array $data): void
     {
         $unitPrice = (float) ($data['unit_price'] ?? $existing?->unit_price ?? 0);
 
@@ -37,11 +35,32 @@ class ProductService
         $percentageMajor = (float) ($data['percentage_major'] ?? $existing?->percentage_major ?? 0);
         $percentageGeneral = (float) ($data['percentage_general'] ?? $existing?->percentage_general ?? 0);
 
-        $data['price_distributor'] = $this->applyMargin($unitPrice, $percentageDistributor);
-        $data['price_major'] = $this->applyMargin($unitPrice, $percentageMajor);
-        $data['price_general'] = $this->applyMargin($unitPrice, $percentageGeneral);
+        $prices = [
+            'price_distributor' => [
+                'value' => $data['price_distributor'] ?? $existing?->price_distributor,
+                'expected' => $this->applyMargin($unitPrice, $percentageDistributor),
+            ],
+            'price_major' => [
+                'value' => $data['price_major'] ?? $existing?->price_major,
+                'expected' => $this->applyMargin($unitPrice, $percentageMajor),
+            ],
+            'price_general' => [
+                'value' => $data['price_general'] ?? $existing?->price_general,
+                'expected' => $this->applyMargin($unitPrice, $percentageGeneral),
+            ],
+        ];
 
-        return $data;
+        $errors = [];
+
+        foreach ($prices as $field => $price) {
+            if (round((float) $price['value'], 2) !== $price['expected']) {
+                $errors[$field] = "El valor debe ser {$price['expected']}.";
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     private function applyMargin(float $unitPrice, float $percentage): float

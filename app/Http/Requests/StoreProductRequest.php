@@ -19,12 +19,13 @@ class StoreProductRequest extends FormRequest
             'measure_unity' => ['required', 'string', 'max:20'],
             'unit_price' => ['required', 'numeric', 'min:0'],
             'percentage_distributor' => ['nullable', 'numeric', 'min:0'],
+            'price_distributor' => ['required', 'numeric', 'min:0'],
             'percentage_major' => ['nullable', 'numeric', 'min:0' ],
+            'price_major' => ['required', 'numeric', 'min:0'],
             'percentage_general' => ['nullable', 'numeric', 'min:0'],
+            'price_general' => ['required', 'numeric', 'min:0'],
             // Stock inicial. A partir de aquí, solo cambia vía stock_movements.
             'stock' => ['nullable', 'numeric', 'min:0'],
-            // price_distributor / price_major / price_general NO se validan aquí:
-            // se calculan siempre en ProductService, nunca vienen del cliente.
         ];
     }
 }
