@@ -18,11 +18,11 @@ class UpdateProductRequest extends FormRequest
             'brand' => ['sometimes', 'nullable', 'string', 'max:255'],
             'measure_unity' => ['sometimes', 'required', 'string', 'max:20'],
             'unit_price' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'percentage_distributor' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
+            'percentage_distributor' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'price_distributor' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'percentage_major' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
+            'percentage_major' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'price_major' => ['sometimes', 'required', 'numeric', 'min:0'],
-            'percentage_general' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
+            'percentage_general' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'price_general' => ['sometimes', 'required', 'numeric', 'min:0'],
             // 'stock' no tiene regla: se protege igual que 'amount' en accounts.
         ];
