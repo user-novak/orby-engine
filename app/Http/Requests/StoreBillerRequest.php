@@ -46,6 +46,18 @@ class StoreBillerRequest extends FormRequest
                 Rule::prohibitedIf(fn () => $this->input('sale_type') === SaleType::Contado->value),
             ],
 
+            'subtotal' => ['required', 'numeric', 'min:0'],
+            'igv' => ['nullable', 'numeric', 'min:0'],
+            'igv_percentage' => [
+                'nullable',
+                'numeric',
+                'min:0.01',
+                'max:100',
+                'required_with:igv',
+                'prohibited_without:igv',
+            ],
+            'total' => ['required', 'numeric', 'min:0'],
+
             'items' => ['required', 'array', 'min:1'],
             // 'distinct': no permitimos el mismo producto dos veces en una
             // misma venta (si se necesita más cantidad, se suma en un solo
@@ -53,9 +65,7 @@ class StoreBillerRequest extends FormRequest
             'items.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.price_tier' => ['required', Rule::enum(PriceTier::class)],
-
-            // subtotal / igv / total / unit_price NO se validan aquí:
-            // BillerService los calcula siempre, nunca vienen del cliente.
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
         ];
     }
 

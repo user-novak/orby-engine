@@ -17,13 +17,6 @@ use Illuminate\Validation\ValidationException;
 
 class BillerService
 {
-    /**
-     * IGV vigente en Perú. Único lugar donde vive esta tasa: si cambia,
-     * se actualiza aquí y ya. (Si algún día necesitas que sea configurable
-     * por entorno, pásala a config/billing.php y léela con config().)
-     */
-    private const IGV_RATE = 0.18;
-
     public function __construct(private readonly AccountMovementService $accountMovements)
     {
     }
@@ -47,9 +40,11 @@ class BillerService
             $lines = $this->resolveLines($data['items']);
             $this->assertStockIsAvailable($lines);
 
-            $subtotal = $this->calculateSubtotal($lines);
-            $igv = round($subtotal * self::IGV_RATE, 2);
-            $total = round($subtotal + $igv, 2);
+            $this->assertAmountsAreValid($data, $lines);
+
+            $subtotal = (float) $data['subtotal'];
+            $igv = (float) ($data['igv'] ?? 0);
+            $total = (float) $data['total'];
 
             $this->assertInitialPaymentIsValid($saleType, $data, $total);
 
@@ -60,6 +55,7 @@ class BillerService
                 'sale_type' => $saleType,
                 'subtotal' => $subtotal,
                 'igv' => $igv,
+                'igv_percentage' => $data['igv_percentage'] ?? null,
                 'total' => $total,
                 'client_id' => $data['client_id'],
                 // Solo se guarda aquí en 'contado' (una sola cuenta, un solo
@@ -96,7 +92,7 @@ class BillerService
             ->get()
             ->keyBy('id');
 
-        return array_map(function (array $item) use ($products) {
+        return array_map(function (array $item, int $index) use ($products) {
             /** @var Product $product */
             $product = $products[$item['product_id']];
             $tier = $item['price_tier'] instanceof PriceTier
@@ -104,7 +100,14 @@ class BillerService
                 : PriceTier::from($item['price_tier']);
 
             $quantity = (float) $item['quantity'];
-            $unitPrice = $tier->resolvePrice($product);
+            $unitPrice = round((float) $item['unit_price'], 2);
+            $expectedUnitPrice = round($tier->resolvePrice($product), 2);
+
+            if ($unitPrice !== $expectedUnitPrice) {
+                throw ValidationException::withMessages([
+                    "items.$index.unit_price" => "El precio unitario debe ser {$expectedUnitPrice}.",
+                ]);
+            }
 
             return [
                 'product' => $product,
@@ -112,7 +115,7 @@ class BillerService
                 'unit_price' => $unitPrice,
                 'subtotal' => round($unitPrice * $quantity, 2),
             ];
-        }, $items);
+        }, $items, array_keys($items));
     }
 
     /**
@@ -135,6 +138,36 @@ class BillerService
     private function calculateSubtotal(array $lines): float
     {
         return round(array_sum(array_column($lines, 'subtotal')), 2);
+    }
+
+    private function assertAmountsAreValid(array $data, array $lines): void
+    {
+        $expectedSubtotal = $this->calculateSubtotal($lines);
+        $igvPercentage = array_key_exists('igv_percentage', $data)
+            ? (float) $data['igv_percentage']
+            : null;
+        $expectedIgv = $igvPercentage === null
+            ? 0.0
+            : round($expectedSubtotal * $igvPercentage / 100, 2);
+        $expectedTotal = round($expectedSubtotal + $expectedIgv, 2);
+
+        $errors = [];
+
+        if (round((float) $data['subtotal'], 2) !== $expectedSubtotal) {
+            $errors['subtotal'] = "El subtotal debe ser {$expectedSubtotal}.";
+        }
+
+        if (round((float) ($data['igv'] ?? 0), 2) !== $expectedIgv) {
+            $errors['igv'] = "El IGV debe ser {$expectedIgv}.";
+        }
+
+        if (round((float) $data['total'], 2) !== $expectedTotal) {
+            $errors['total'] = "El total debe ser {$expectedTotal}.";
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     private function assertInitialPaymentIsValid(SaleType $saleType, array $data, float $total): void

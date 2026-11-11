@@ -16,6 +16,7 @@ class BillerResource extends JsonResource
             'sale_type' => $this->sale_type,
             'subtotal' => $this->subtotal,
             'igv' => $this->igv,
+            'igv_percentage' => $this->igv_percentage,
             'total' => $this->total,
             'client_id' => $this->client_id,
             'account_id' => $this->account_id,

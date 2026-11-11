@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('sale_type', ['contado', 'credito']);
             $table->decimal('subtotal', 10, 2);
             $table->decimal('igv', 10, 2);
+            $table->decimal('igv_percentage', 5, 2)->nullable();
             $table->decimal('total', 10, 2);
             $table->foreignId('client_id')->constrained()->restrictOnDelete();
             $table->foreignId('account_id')->nullable()->constrained()->restrictOnDelete();

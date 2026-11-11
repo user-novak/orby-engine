@@ -15,6 +15,7 @@ class Biller extends Model
         'sale_type',
         'subtotal',
         'igv',
+        'igv_percentage',
         'total',
         'client_id',
         'account_id',
@@ -30,6 +31,7 @@ class Biller extends Model
             'payment_date' => 'date',
             'subtotal' => 'decimal:2',
             'igv' => 'decimal:2',
+            'igv_percentage' => 'decimal:2',
             'total' => 'decimal:2',
         ];
     }
