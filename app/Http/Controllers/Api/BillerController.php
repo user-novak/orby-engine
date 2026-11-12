@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexBillerRequest;
 use App\Http\Requests\StoreBillerRequest;
 use App\Http\Resources\BillerResource;
 use App\Models\Biller;
 use App\Services\BillerService;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class BillerController extends Controller
@@ -16,7 +16,7 @@ class BillerController extends Controller
     {
     }
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(IndexBillerRequest $request): AnonymousResourceCollection
     {
         $billers = Biller::query()
             ->with('client')
@@ -29,7 +29,8 @@ class BillerController extends Controller
                 fn ($query) => $query->where('sale_type', $request->string('sale_type'))
             )
             ->latest('sale_date')
-            ->paginate();
+            ->latest('id')
+            ->paginate($request->integer('per_page', 15));
 
         return BillerResource::collection($billers);
     }
