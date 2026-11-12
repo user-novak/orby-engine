@@ -21,8 +21,27 @@ class BillerController extends Controller
         $billers = Biller::query()
             ->with('client')
             ->when(
+                $request->filled('date_from'),
+                fn ($query) => $query->whereDate('sale_date', '>=', $request->date('date_from'))
+            )
+            ->when(
+                $request->filled('date_to'),
+                fn ($query) => $query->whereDate('sale_date', '<=', $request->date('date_to'))
+            )
+            ->when(
                 $request->filled('client_id'),
                 fn ($query) => $query->where('client_id', $request->integer('client_id'))
+            )
+            ->when(
+                $request->filled('account_id'),
+                fn ($query) => $query->where('account_id', $request->integer('account_id'))
+            )
+            ->when(
+                $request->filled('product_id'),
+                fn ($query) => $query->whereHas(
+                    'items',
+                    fn ($items) => $items->where('product_id', $request->integer('product_id'))
+                )
             )
             ->when(
                 $request->filled('sale_type'),
