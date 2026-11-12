@@ -64,7 +64,7 @@ class BillerController extends Controller
     public function show(Biller $biller): BillerResource
     {
         return BillerResource::make(
-            $biller->load(['client', 'items.product', 'accountMovements'])
+            $biller->load(['client', 'account', 'items.product', 'accountMovements.account'])
         );
     }
 

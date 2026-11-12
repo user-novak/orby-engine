@@ -21,6 +21,7 @@ class BillerResource extends JsonResource
             'client_id' => $this->client_id,
             'account_id' => $this->account_id,
             'client' => ClientResource::make($this->whenLoaded('client')),
+            'account' => AccountResource::make($this->whenLoaded('account')),
             'items' => BillerItemResource::collection($this->whenLoaded('items')),
             'account_movements' => AccountMovementResource::collection($this->whenLoaded('accountMovements')),
             'created_at' => $this->created_at,
