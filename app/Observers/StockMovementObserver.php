@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\StockMovementType;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,16 @@ class StockMovementObserver
      */
     public function created(StockMovement $stockMovement): void
     {
-        $this->applyDelta($stockMovement, $stockMovement->type === 'entrada' ? 1 : -1);
+        $type = $stockMovement->type instanceof StockMovementType
+            ? $stockMovement->type
+            : StockMovementType::from($stockMovement->type);
+
+        $sign = match ($type) {
+            StockMovementType::Entrada => 1,
+            StockMovementType::Salida => -1,
+        };
+
+        $this->applyDelta($stockMovement, $sign);
     }
 
     private function applyDelta(StockMovement $stockMovement, int $sign): void
