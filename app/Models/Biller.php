@@ -83,7 +83,7 @@ class Biller extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'biller_items')
-            ->withPivot(['quantity', 'unit_price', 'subtotal'])
+            ->withPivot(['quantity', 'unit_price', 'sell_percentage', 'type_percentage', 'subtotal'])
             ->using(BillerItem::class)
             ->withTimestamps();
     }

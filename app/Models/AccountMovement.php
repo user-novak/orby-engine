@@ -37,6 +37,10 @@ class AccountMovement extends Model
         return $this->belongsTo(Account::class);
     }
 
+    /**
+     * Nullable: los ingresos y egresos manuales no necesariamente se
+     * originan en una factura.
+     */
     public function biller(): BelongsTo
     {
         return $this->belongsTo(Biller::class);

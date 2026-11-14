@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->restrictOnDelete();
             $table->decimal('quantity', 10, 2);
             $table->decimal('unit_price', 10, 2);
+            $table->decimal('sell_percentage', 5, 2);
+            $table->enum('type_percentage', ['distributor', 'major', 'general']);
             $table->decimal('subtotal', 10, 2);
             $table->timestamps();
         });

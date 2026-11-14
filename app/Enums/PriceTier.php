@@ -5,10 +5,9 @@ namespace App\Enums;
 use App\Models\Product;
 
 /**
- * Nivel de precio con el que se vende un producto en una línea de factura
- * (biller_items.price_tier no existe como columna — este valor solo se usa
- * en tiempo de creación para resolver qué columna price_* de products usar,
- * el resultado ya calculado queda guardado en biller_items.unit_price).
+ * Nivel de precio con el que se vende un producto en una línea de factura.
+ * Se usa para resolver las columnas price_* y percentage_* de products; el
+ * resultado queda guardado en biller_items para conservar la trazabilidad.
  *
  * Cada caso mapea 1:1 a una columna price_* ya calculada por ProductService
  * (unit_price + su percentage_* correspondiente). Si el día de mañana
@@ -30,9 +29,23 @@ enum PriceTier: string
         };
     }
 
+    public function percentageColumn(): string
+    {
+        return match ($this) {
+            self::Distributor => 'percentage_distributor',
+            self::Major => 'percentage_major',
+            self::General => 'percentage_general',
+        };
+    }
+
     public function resolvePrice(Product $product): float
     {
         return (float) $product->{$this->priceColumn()};
+    }
+
+    public function resolvePercentage(Product $product): float
+    {
+        return (float) $product->{$this->percentageColumn()};
     }
 
     public function label(): string

@@ -25,7 +25,7 @@ return new class extends Migration
             ]);
             $table->text('description')->nullable();
             $table->foreignId('account_id')->nullable()->constrained()->restrictOnDelete();
-            $table->foreignId('biller_id')->constrained()->restrictOnDelete();
+            $table->foreignId('biller_id')->nullable()->constrained()->restrictOnDelete();
             $table->timestamps();
         });
     }

@@ -113,6 +113,8 @@ class BillerService
                 'product' => $product,
                 'quantity' => $quantity,
                 'unit_price' => $unitPrice,
+                'sell_percentage' => $tier->resolvePercentage($product),
+                'type_percentage' => $tier,
                 'subtotal' => round($unitPrice * $quantity, 2),
             ];
         }, $items, array_keys($items));
@@ -187,6 +189,8 @@ class BillerService
                 'product_id' => $line['product']->id,
                 'quantity' => $line['quantity'],
                 'unit_price' => $line['unit_price'],
+                'sell_percentage' => $line['sell_percentage'],
+                'type_percentage' => $line['type_percentage'],
                 'subtotal' => $line['subtotal'],
             ]);
 

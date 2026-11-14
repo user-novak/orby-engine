@@ -1601,6 +1601,26 @@
               "4.83"
             ]
           },
+          "sell_percentage": {
+            "type": "string",
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Porcentaje de venta aplicado al precio base.",
+            "examples": [
+              "15.00"
+            ]
+          },
+          "type_percentage": {
+            "type": "string",
+            "enum": [
+              "distributor",
+              "major",
+              "general"
+            ],
+            "description": "Nivel de porcentaje aplicado al producto.",
+            "examples": [
+              "general"
+            ]
+          },
           "subtotal": {
             "type": "string",
             "pattern": "^-?\\d+\\.\\d{2}$",
@@ -1619,6 +1639,8 @@
           "product_id",
           "quantity",
           "unit_price",
+          "sell_percentage",
+          "type_percentage",
           "subtotal"
         ]
       },
@@ -1675,9 +1697,12 @@
             ]
           },
           "biller_id": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 1,
-            "description": "Venta que originó el movimiento.",
+            "description": "Venta que originó el movimiento. Es `null` para ingresos o egresos sin factura asociada.",
             "examples": [
               1
             ]

@@ -15,6 +15,8 @@ class BillerItemResource extends JsonResource
             'product_id' => $this->product_id,
             'quantity' => $this->quantity,
             'unit_price' => $this->unit_price,
+            'sell_percentage' => $this->sell_percentage,
+            'type_percentage' => $this->type_percentage?->value,
             'subtotal' => $this->subtotal,
             'product' => ProductResource::make($this->whenLoaded('product')),
         ];

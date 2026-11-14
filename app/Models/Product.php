@@ -57,14 +57,15 @@ class Product extends Model
 
     /**
      * Relación muchos a muchos "lógica" con Biller a través de biller_items,
-     * que además guarda datos propios de la línea (quantity, unit_price, subtotal).
+     * que además guarda datos propios de la línea (quantity, unit_price,
+     * sell_percentage, type_percentage, subtotal).
      * Útil cuando quieras, por ejemplo, $product->billers para saber en qué
      * facturas se vendió, sin pasar explícitamente por BillerItem.
      */
     public function billers(): BelongsToMany
     {
         return $this->belongsToMany(Biller::class, 'biller_items')
-            ->withPivot(['quantity', 'unit_price', 'subtotal'])
+            ->withPivot(['quantity', 'unit_price', 'sell_percentage', 'type_percentage', 'subtotal'])
             ->using(BillerItem::class)
             ->withTimestamps();
     }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PriceTier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -12,6 +13,8 @@ class BillerItem extends Model
         'product_id',
         'quantity',
         'unit_price',
+        'sell_percentage',
+        'type_percentage',
         'subtotal',
     ];
 
@@ -23,6 +26,8 @@ class BillerItem extends Model
         return [
             'quantity' => 'decimal:2',
             'unit_price' => 'decimal:2',
+            'sell_percentage' => 'decimal:2',
+            'type_percentage' => PriceTier::class,
             'subtotal' => 'decimal:2',
         ];
     }
