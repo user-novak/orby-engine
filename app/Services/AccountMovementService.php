@@ -6,6 +6,7 @@ use App\Enums\AccountMovementStatus;
 use App\Enums\AccountMovementType;
 use App\Models\AccountMovement;
 use App\Models\Biller;
+use App\Models\Category;
 use Illuminate\Support\Facades\DB;
 
 class AccountMovementService
@@ -38,6 +39,7 @@ class AccountMovementService
                 'type' => AccountMovementType::Ingreso,
                 'status' => AccountMovementStatus::Amortizacion,
                 'description' => $data['description'] ?? null,
+                'category_id' => Category::salesId(),
                 'account_id' => $data['account_id'],
                 'biller_id' => $biller->id,
             ]);

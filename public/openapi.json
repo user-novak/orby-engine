@@ -708,6 +708,17 @@
             "example": 1
           },
           {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "description": "Filtra los movimientos asignados a esta categoría.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
             "name": "status",
             "in": "query",
             "required": false,
@@ -734,7 +745,7 @@
           }
         },
         "summary": "Listar movimientos de cuenta",
-        "description": "Devuelve una página de movimientos contables ordenados por fecha descendente. Se puede filtrar por cuenta, venta, estado y dirección del dinero."
+        "description": "Devuelve una página de movimientos contables ordenados por fecha descendente. Se puede filtrar por cuenta, venta, categoría, estado y dirección del dinero."
       }
     },
     "/api/account-movements/{account_movement}": {
@@ -1696,6 +1707,14 @@
               1
             ]
           },
+          "category_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Categoría financiera asignada al movimiento.",
+            "examples": [
+              1
+            ]
+          },
           "biller_id": {
             "type": [
               "integer",
@@ -1718,6 +1737,7 @@
           "type",
           "status",
           "description",
+          "category_id",
           "account_id",
           "biller_id"
         ]

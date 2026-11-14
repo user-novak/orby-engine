@@ -13,6 +13,7 @@ class AccountMovement extends Model
         'type',
         'status',
         'description',
+        'category_id',
         'account_id',
         'biller_id',
     ];
@@ -35,6 +36,11 @@ class AccountMovement extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Enums\StockMovementType;
 use App\Models\AccountMovement;
 use App\Models\Biller;
 use App\Models\BillerItem;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +46,7 @@ class BillerService
             $subtotal = (float) $data['subtotal'];
             $igv = (float) ($data['igv'] ?? 0);
             $total = (float) $data['total'];
+            $salesCategoryId = Category::salesId();
 
             $this->assertInitialPaymentIsValid($saleType, $data, $total);
 
@@ -68,8 +70,8 @@ class BillerService
             $this->createItemsAndStockMovements($biller, $lines);
 
             $saleType === SaleType::Contado
-                ? $this->registerCashPayment($biller, $data['account_id'], $total)
-                : $this->registerCreditSale($biller, $total, $data);
+                ? $this->registerCashPayment($biller, $data['account_id'], $total, $salesCategoryId)
+                : $this->registerCreditSale($biller, $total, $data, $salesCategoryId);
 
             return $biller->refresh()->load(['client', 'items.product', 'accountMovements']);
         });
@@ -206,7 +208,7 @@ class BillerService
         }
     }
 
-    private function registerCashPayment(Biller $biller, int $accountId, float $total): void
+    private function registerCashPayment(Biller $biller, int $accountId, float $total, int $categoryId): void
     {
         AccountMovement::create([
             'amount' => $total,
@@ -214,12 +216,13 @@ class BillerService
             'type' => AccountMovementType::Ingreso,
             'status' => AccountMovementStatus::CuentaCobrada,
             'description' => 'Pago al contado',
+            'category_id' => $categoryId,
             'account_id' => $accountId,
             'biller_id' => $biller->id,
         ]);
     }
 
-    private function registerCreditSale(Biller $biller, float $total, array $data): void
+    private function registerCreditSale(Biller $biller, float $total, array $data, int $categoryId): void
     {
         // Nace la deuda completa como 'cuenta_por_cobrar', sin cuenta
         // asignada todavía (regla que ya habíamos definido).
@@ -229,6 +232,7 @@ class BillerService
             'type' => AccountMovementType::Ingreso,
             'status' => AccountMovementStatus::CuentaPorCobrar,
             'description' => 'Saldo pendiente por cobrar',
+            'category_id' => $categoryId,
             'account_id' => null,
             'biller_id' => $biller->id,
         ]);

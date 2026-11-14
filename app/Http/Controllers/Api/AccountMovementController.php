@@ -34,6 +34,10 @@ class AccountMovementController extends Controller
                 fn ($query) => $query->where('biller_id', $request->integer('biller_id'))
             )
             ->when(
+                $request->filled('category_id'),
+                fn ($query) => $query->where('category_id', $request->integer('category_id'))
+            )
+            ->when(
                 $request->filled('status'),
                 fn ($query) => $query->where('status', $request->string('status'))
             )
