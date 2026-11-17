@@ -17,6 +17,7 @@ Route::apiResource('accounts', AccountController::class);
 Route::apiResource('products', ProductController::class);
 
 // categories: se administran mediante estado; no se eliminan físicamente.
+Route::get('categories/protected', [CategoryController::class, 'protectedCategories']);
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show', 'store', 'update']);
 
 // billers: index/show/store. Sin update/destroy (ver nota en el controller).

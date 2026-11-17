@@ -108,6 +108,21 @@
         "description": "Crea una categoría con estado `activo`."
       }
     },
+    "/api/categories/protected": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "operationId": "listProtectedCategories",
+        "summary": "Listar categorías protegidas",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProtectedCategoryList"
+          }
+        },
+        "description": "Devuelve las categorías predeterminadas que no pueden modificarse ni desactivarse."
+      }
+    },
     "/api/categories/{category}": {
       "parameters": [
         {
@@ -1250,6 +1265,16 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/CategoryResponse"
+            }
+          }
+        }
+      },
+      "ProtectedCategoryList": {
+        "description": "Lista de categorías protegidas.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryList"
             }
           }
         }
@@ -2991,6 +3016,21 @@
         "required": [
           "message",
           "errors"
+        ]
+      },
+      "CategoryList": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "CategoryResponse": {

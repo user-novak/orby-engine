@@ -42,6 +42,16 @@ class CategoryController extends Controller
         return CategoryResource::make($category);
     }
 
+    public function protectedCategories(): AnonymousResourceCollection
+    {
+        return CategoryResource::collection(
+            Category::query()
+                ->protectedCategories()
+                ->oldest('id')
+                ->get()
+        );
+    }
+
     public function show(Category $category): CategoryResource
     {
         return CategoryResource::make($category);
