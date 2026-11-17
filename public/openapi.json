@@ -16,6 +16,10 @@
   ],
   "tags": [
     {
+      "name": "Categories",
+      "description": "Administración de categorías financieras. Las categorías se desactivan en lugar de eliminarse."
+    },
+    {
       "name": "Clients",
       "description": "Alta, consulta, actualización y eliminación de clientes."
     },
@@ -49,6 +53,128 @@
     }
   ],
   "paths": {
+    "/api/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "operationId": "listCategories",
+        "summary": "Listar categorías",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/Page"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CategoryType"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CategoryStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CategoryCollection"
+          }
+        },
+        "description": "Devuelve una página de categorías y permite filtrar por tipo y estado."
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "operationId": "createCategory",
+        "summary": "Crear una categoría",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CategoryCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Category"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Crea una categoría con estado `activo`."
+      }
+    },
+    "/api/categories/{category}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/CategoryId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "operationId": "getCategory",
+        "summary": "Obtener una categoría",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Category"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        },
+        "description": "Devuelve la categoría identificada por `category`."
+      },
+      "put": {
+        "tags": [
+          "Categories"
+        ],
+        "operationId": "replaceCategory",
+        "summary": "Actualizar parcialmente una categoría con PUT",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CategoryUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Category"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Actualiza únicamente los campos enviados. Para desactivar una categoría se establece `status` en `inactivo`."
+      },
+      "patch": {
+        "tags": [
+          "Categories"
+        ],
+        "operationId": "updateCategory",
+        "summary": "Actualizar parcialmente una categoría",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CategoryUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Category"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Actualiza únicamente los campos enviados. Para desactivar una categoría se establece `status` en `inactivo`."
+      }
+    },
     "/api/clients": {
       "get": {
         "tags": [
@@ -786,6 +912,17 @@
         },
         "example": 1
       },
+      "CategoryId": {
+        "name": "category",
+        "in": "path",
+        "required": true,
+        "description": "Identificador único de la categoría.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "example": 1
+      },
       "ClientId": {
         "name": "client",
         "in": "path",
@@ -865,6 +1002,45 @@
       }
     },
     "requestBodies": {
+      "CategoryCreate": {
+        "required": true,
+        "description": "Nombre y tipo de la categoría. El estado se asigna como `activo` en el servidor.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryCreate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de solicitud",
+                "value": {
+                  "name": "Transporte",
+                  "type": "egreso"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CategoryUpdate": {
+        "required": true,
+        "description": "Campos de la categoría que se desean modificar.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryUpdate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Ejemplo de desactivación",
+                "value": {
+                  "status": "inactivo"
+                }
+              }
+            }
+          }
+        }
+      },
       "ClientCreate": {
         "required": true,
         "description": "Datos del cliente. `name` y al menos uno entre `dni` y `ruc` son obligatorios.",
@@ -1068,6 +1244,16 @@
       }
     },
     "responses": {
+      "Category": {
+        "description": "Categoría obtenida, creada o actualizada correctamente.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryResponse"
+            }
+          }
+        }
+      },
       "Client": {
         "description": "Cliente obtenido, creado o actualizado correctamente.",
         "content": {
@@ -1134,6 +1320,16 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/AccountMovementResponse"
+            }
+          }
+        }
+      },
+      "CategoryCollection": {
+        "description": "Página de categorías.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CategoryCollection"
             }
           }
         }
@@ -1246,6 +1442,23 @@
           "2026-10-20T15:30:00.000000Z"
         ]
       },
+      "CategoryType": {
+        "type": "string",
+        "enum": [
+          "ingreso",
+          "egreso",
+          "ambos"
+        ],
+        "description": "Dirección de movimiento para la que se puede utilizar la categoría."
+      },
+      "CategoryStatus": {
+        "type": "string",
+        "enum": [
+          "activo",
+          "inactivo"
+        ],
+        "description": "Estado de disponibilidad de la categoría."
+      },
       "SaleType": {
         "type": "string",
         "enum": [
@@ -1289,6 +1502,44 @@
           "amortizacion"
         ],
         "description": "Estado o motivo contable del movimiento."
+      },
+      "Category": {
+        "type": "object",
+        "description": "Categoría financiera asignable a movimientos de cuenta.",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true,
+            "description": "Identificador único de la categoría."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Nombre único de la categoría."
+          },
+          "type": {
+            "$ref": "#/components/schemas/CategoryType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CategoryStatus"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/Timestamp"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "status",
+          "created_at",
+          "updated_at"
+        ]
       },
       "Client": {
         "type": "object",
@@ -1918,6 +2169,43 @@
           "biller_id",
           "created_at"
         ]
+      },
+      "CategoryCreate": {
+        "type": "object",
+        "description": "Datos para crear una categoría activa.",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Nombre único de la categoría."
+          },
+          "type": {
+            "$ref": "#/components/schemas/CategoryType"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "CategoryUpdate": {
+        "type": "object",
+        "description": "Actualización parcial de una categoría.",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Nuevo nombre único de la categoría."
+          },
+          "type": {
+            "$ref": "#/components/schemas/CategoryType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CategoryStatus"
+          }
+        }
       },
       "ClientCreate": {
         "type": "object",
@@ -2703,6 +2991,41 @@
         "required": [
           "message",
           "errors"
+        ]
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Category"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CategoryCollection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          },
+          "links": {
+            "$ref": "#/components/schemas/PaginationLinks"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginationMeta"
+          }
+        },
+        "required": [
+          "data",
+          "links",
+          "meta"
         ]
       },
       "ClientResponse": {

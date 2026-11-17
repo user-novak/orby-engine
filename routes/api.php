@@ -8,12 +8,16 @@ use App\Http\Controllers\Api\BillerItemController;
 use App\Http\Controllers\Api\AccountMovementController;
 use App\Http\Controllers\Api\AmortizationController;
 use App\Http\Controllers\Api\BillerController;
+use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Support\Facades\Route;
 
 // Entidades simples: CRUD completo.
 Route::apiResource('clients', ClientController::class);
 Route::apiResource('accounts', AccountController::class);
 Route::apiResource('products', ProductController::class);
+
+// categories: se administran mediante estado; no se eliminan físicamente.
+Route::apiResource('categories', CategoryController::class)->only(['index', 'show', 'store', 'update']);
 
 // billers: index/show/store. Sin update/destroy (ver nota en el controller).
 Route::apiResource('billers', BillerController::class)->only(['index', 'show', 'store']);
