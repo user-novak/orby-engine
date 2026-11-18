@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAccountMovementRequest;
+use App\Http\Requests\StoreAccountPaymentRequest;
 use App\Http\Resources\AccountMovementResource;
 use App\Models\AccountMovement;
 use App\Services\AccountMovementService;
@@ -28,7 +29,7 @@ class AccountMovementController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $movements = AccountMovement::query()
-            ->with('account')
+            ->with(['account', 'category'])
             ->when(
                 $request->filled('account_id'),
                 fn ($query) => $query->where('account_id', $request->integer('account_id'))
@@ -50,7 +51,7 @@ class AccountMovementController extends Controller
                 fn ($query) => $query->where('type', $request->string('type'))
             )
             ->latest('movement_date')
-            ->paginate();
+            ->paginate($request->integer('per_page', 15));
 
         return AccountMovementResource::collection($movements);
     }
@@ -59,11 +60,20 @@ class AccountMovementController extends Controller
     {
         $movement = $this->accountMovements->registerManual($request->validated());
 
-        return AccountMovementResource::make($movement->load('account'));
+        return AccountMovementResource::make($movement->load(['account', 'category']));
+    }
+
+    public function pay(
+        StoreAccountPaymentRequest $request,
+        AccountMovement $accountMovement,
+    ): AccountMovementResource {
+        $payment = $this->accountMovements->registerPayment($accountMovement, $request->validated());
+
+        return AccountMovementResource::make($payment->load(['account', 'category']));
     }
 
     public function show(AccountMovement $accountMovement): AccountMovementResource
     {
-        return AccountMovementResource::make($accountMovement->load('account'));
+        return AccountMovementResource::make($accountMovement->load(['account', 'category']));
     }
 }

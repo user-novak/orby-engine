@@ -930,6 +930,42 @@
         "summary": "Obtener un movimiento de cuenta",
         "description": "Devuelve el movimiento contable identificado por `account_movement` junto con su cuenta cuando está asignada."
       }
+    },
+    "/api/account-movements/{accountMovement}/payments": {
+      "parameters": [
+        {
+          "name": "accountMovement",
+          "in": "path",
+          "required": true,
+          "description": "Identificador de la cuenta por pagar pendiente.",
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Account movements"
+        ],
+        "operationId": "payAccountMovement",
+        "summary": "Pagar o amortizar una cuenta por pagar",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AccountPayment"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AccountMovement"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Registra un egreso en la cuenta seleccionada y reduce el saldo pendiente. Si el saldo llega a cero, la deuda cambia a cuenta_pagada."
+      }
     }
   },
   "components": {
@@ -1285,6 +1321,27 @@
                   "status": "cuenta_por_pagar",
                   "category_id": 2,
                   "description": "Servicio pendiente de pago"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AccountPayment": {
+        "required": true,
+        "description": "Cuenta bancaria y monto que se aplicarán a la deuda.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountPayment"
+            },
+            "examples": {
+              "default": {
+                "summary": "Amortización de una cuenta por pagar",
+                "value": {
+                  "account_id": 1,
+                  "amount": 100,
+                  "description": "Pago parcial"
                 }
               }
             }
@@ -2059,6 +2116,9 @@
           },
           "account": {
             "$ref": "#/components/schemas/Account"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
           }
         },
         "required": [
@@ -3331,6 +3391,32 @@
           "data",
           "links",
           "meta"
+        ]
+      },
+      "AccountPayment": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Cuenta bancaria desde la que se realiza el pago."
+          },
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Monto a pagar, sin superar el saldo pendiente."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "account_id",
+          "amount"
         ]
       },
       "AccountMovementCreate": {
