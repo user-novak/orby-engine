@@ -966,6 +966,42 @@
         },
         "description": "Registra un egreso en la cuenta seleccionada y reduce el saldo pendiente. Si el saldo llega a cero, la deuda cambia a cuenta_pagada."
       }
+    },
+    "/api/account-movements/{accountMovement}/collections": {
+      "parameters": [
+        {
+          "name": "accountMovement",
+          "in": "path",
+          "required": true,
+          "description": "Identificador de la cuenta por cobrar pendiente.",
+          "schema": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Account movements"
+        ],
+        "operationId": "collectAccountMovement",
+        "summary": "Cobrar o amortizar una cuenta por cobrar",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AccountCollectionCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AccountMovement"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Registra un ingreso en la cuenta seleccionada y reduce el saldo pendiente. Si el saldo llega a cero, la deuda cambia a cuenta_cobrada."
+      }
     }
   },
   "components": {
@@ -1321,6 +1357,27 @@
                   "status": "cuenta_por_pagar",
                   "category_id": 2,
                   "description": "Servicio pendiente de pago"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AccountCollectionCreate": {
+        "required": true,
+        "description": "Cuenta bancaria y monto que se cobrarán de la deuda.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountCollectionCreate"
+            },
+            "examples": {
+              "default": {
+                "summary": "Amortización de una cuenta por cobrar",
+                "value": {
+                  "account_id": 1,
+                  "amount": 100,
+                  "description": "Cobro parcial"
                 }
               }
             }
@@ -3391,6 +3448,32 @@
           "data",
           "links",
           "meta"
+        ]
+      },
+      "AccountCollectionCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Cuenta bancaria en la que se recibe el cobro."
+          },
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Monto a cobrar, sin superar el saldo pendiente."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "account_id",
+          "amount"
         ]
       },
       "AccountPayment": {

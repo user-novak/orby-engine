@@ -72,6 +72,52 @@ class AccountMovementService
         });
     }
 
+    public function registerCollection(AccountMovement $accountMovement, array $data): AccountMovement
+    {
+        return DB::transaction(function () use ($accountMovement, $data) {
+            $pending = AccountMovement::whereKey($accountMovement->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (
+                $pending->type !== AccountMovementType::Ingreso->value
+                || $pending->status !== AccountMovementStatus::CuentaPorCobrar->value
+            ) {
+                throw ValidationException::withMessages([
+                    'account_movement' => 'El movimiento no corresponde a una cuenta por cobrar pendiente.',
+                ]);
+            }
+
+            if ((float) $data['amount'] > (float) $pending->amount) {
+                throw ValidationException::withMessages([
+                    'amount' => "El monto no puede superar la deuda pendiente ({$pending->amount}).",
+                ]);
+            }
+
+            $collection = AccountMovement::create([
+                'amount' => $data['amount'],
+                'movement_date' => now(),
+                'type' => AccountMovementType::Ingreso,
+                'status' => AccountMovementStatus::Amortizacion,
+                'description' => $data['description'] ?? 'Cobro de cuenta por cobrar',
+                'category_id' => $pending->category_id,
+                'account_id' => $data['account_id'],
+                'biller_id' => $pending->biller_id,
+            ]);
+
+            $remaining = round((float) $pending->amount - (float) $data['amount'], 2);
+
+            $pending->update([
+                'amount' => $remaining,
+                'status' => $remaining <= 0
+                    ? AccountMovementStatus::CuentaCobrada
+                    : AccountMovementStatus::CuentaPorCobrar,
+            ]);
+
+            return $collection;
+        });
+    }
+
     /**
      * Registra una nueva amortización sobre la deuda pendiente de una
      * factura al crédito, y descuenta el monto del registro

@@ -32,6 +32,7 @@ Route::apiResource('biller-items', BillerItemController::class)->only(['index', 
 // account_movements: consulta y registro de ingresos/egresos manuales.
 Route::apiResource('account-movements', AccountMovementController::class)->only(['index', 'show', 'store']);
 Route::post('account-movements/{accountMovement}/payments', [AccountMovementController::class, 'pay']);
+Route::post('account-movements/{accountMovement}/collections', [AccountMovementController::class, 'collect']);
 
 // Acción de negocio puntual (no es CRUD): registrar una amortización sobre
 // la deuda pendiente de una factura al crédito ya existente.

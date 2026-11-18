@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAccountMovementRequest;
+use App\Http\Requests\StoreAccountCollectionRequest;
 use App\Http\Requests\StoreAccountPaymentRequest;
 use App\Http\Resources\AccountMovementResource;
 use App\Models\AccountMovement;
@@ -70,6 +71,18 @@ class AccountMovementController extends Controller
         $payment = $this->accountMovements->registerPayment($accountMovement, $request->validated());
 
         return AccountMovementResource::make($payment->load(['account', 'category']));
+    }
+
+    public function collect(
+        StoreAccountCollectionRequest $request,
+        AccountMovement $accountMovement,
+    ): AccountMovementResource {
+        $collection = $this->accountMovements->registerCollection(
+            $accountMovement,
+            $request->validated(),
+        );
+
+        return AccountMovementResource::make($collection->load(['account', 'category']));
     }
 
     public function show(AccountMovement $accountMovement): AccountMovementResource
