@@ -29,8 +29,8 @@ Route::apiResource('stock-movements', StockMovementController::class)->only(['in
 // biller_items: solo lectura, se crean dentro de BillerService.
 Route::apiResource('biller-items', BillerItemController::class)->only(['index', 'show']);
 
-// account_movements: solo lectura para listar/consultar.
-Route::apiResource('account-movements', AccountMovementController::class)->only(['index', 'show']);
+// account_movements: consulta y registro de ingresos/egresos manuales.
+Route::apiResource('account-movements', AccountMovementController::class)->only(['index', 'show', 'store']);
 
 // Acción de negocio puntual (no es CRUD): registrar una amortización sobre
 // la deuda pendiente de una factura al crédito ya existente.

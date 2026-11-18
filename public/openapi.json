@@ -887,6 +887,25 @@
         },
         "summary": "Listar movimientos de cuenta",
         "description": "Devuelve una página de movimientos contables ordenados por fecha descendente. Se puede filtrar por cuenta, venta, categoría, estado y dirección del dinero."
+      },
+      "post": {
+        "tags": [
+          "Account movements"
+        ],
+        "operationId": "createManualAccountMovement",
+        "summary": "Registrar un movimiento manual",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AccountMovementCreate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AccountMovement"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        },
+        "description": "Registra un ingreso o egreso manual sin factura. Los estados futuros no aceptan cuenta bancaria y no modifican saldos; los estados cobrados o pagados requieren cuenta y actualizan su saldo."
       }
     },
     "/api/account-movements/{account_movement}": {
@@ -1230,6 +1249,42 @@
                   "product_id": 1,
                   "quantity": 25,
                   "movement_date": "2026-10-20T15:30:00-05:00"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AccountMovementCreate": {
+        "required": true,
+        "description": "Datos del ingreso o egreso manual.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AccountMovementCreate"
+            },
+            "examples": {
+              "income": {
+                "summary": "Ingreso cobrado",
+                "value": {
+                  "amount": 150,
+                  "movement_date": "2026-11-17T10:00:00-05:00",
+                  "type": "ingreso",
+                  "status": "cuenta_cobrada",
+                  "category_id": 1,
+                  "account_id": 1,
+                  "description": "Ingreso extraordinario"
+                }
+              },
+              "futureExpense": {
+                "summary": "Egreso futuro",
+                "value": {
+                  "amount": 300,
+                  "movement_date": "2026-11-30T10:00:00-05:00",
+                  "type": "egreso",
+                  "status": "cuenta_por_pagar",
+                  "category_id": 2,
+                  "description": "Servicio pendiente de pago"
                 }
               }
             }
@@ -3276,6 +3331,57 @@
           "data",
           "links",
           "meta"
+        ]
+      },
+      "AccountMovementCreate": {
+        "type": "object",
+        "description": "Movimiento manual sin factura. `amortizacion` no está permitido.",
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "movement_date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "$ref": "#/components/schemas/AccountMovementType"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "cuenta_cobrada",
+              "cuenta_pagada",
+              "cuenta_por_cobrar",
+              "cuenta_por_pagar"
+            ],
+            "description": "Para ingreso se admite cuenta_cobrada o cuenta_por_cobrar; para egreso, cuenta_pagada o cuenta_por_pagar."
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "category_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Categoría activa compatible con el tipo del movimiento."
+          },
+          "account_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Obligatoria para cuentas cobradas o pagadas y no permitida para cuentas futuras."
+          }
+        },
+        "required": [
+          "amount",
+          "movement_date",
+          "type",
+          "status",
+          "category_id"
         ]
       },
       "AccountMovementResponse": {

@@ -3,24 +3,28 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreAccountMovementRequest;
 use App\Http\Resources\AccountMovementResource;
 use App\Models\AccountMovement;
+use App\Services\AccountMovementService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
- * También de solo lectura. La creación de un AccountMovement siempre pasa
- * por una acción de negocio específica:
+ * Los movimientos manuales se pueden registrar mediante store(). Los demás
+ * movimientos siguen pasando por acciones de negocio específicas:
  * - La venta (al contado o al crédito) crea el/los movimientos iniciales
  *   dentro de BillerService (pendiente de construir).
  * - Una amortización posterior sobre una deuda existente pasa por
  *   AmortizationController, que sí valida reglas propias (no amortizar más
  *   de lo que se debe, actualizar el saldo pendiente).
- * Un store() genérico aquí permitiría crear movimientos inconsistentes con
- * el resto del ledger, así que no lo exponemos.
  */
 class AccountMovementController extends Controller
 {
+    public function __construct(private readonly AccountMovementService $accountMovements)
+    {
+    }
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $movements = AccountMovement::query()
@@ -49,6 +53,13 @@ class AccountMovementController extends Controller
             ->paginate();
 
         return AccountMovementResource::collection($movements);
+    }
+
+    public function store(StoreAccountMovementRequest $request): AccountMovementResource
+    {
+        $movement = $this->accountMovements->registerManual($request->validated());
+
+        return AccountMovementResource::make($movement->load('account'));
     }
 
     public function show(AccountMovement $accountMovement): AccountMovementResource

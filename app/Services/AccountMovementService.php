@@ -11,6 +11,20 @@ use Illuminate\Support\Facades\DB;
 
 class AccountMovementService
 {
+    public function registerManual(array $data): AccountMovement
+    {
+        return DB::transaction(fn () => AccountMovement::create([
+            'amount' => $data['amount'],
+            'movement_date' => $data['movement_date'],
+            'type' => $data['type'],
+            'status' => $data['status'],
+            'description' => $data['description'] ?? null,
+            'category_id' => $data['category_id'],
+            'account_id' => $data['account_id'] ?? null,
+            'biller_id' => null,
+        ]));
+    }
+
     /**
      * Registra una nueva amortización sobre la deuda pendiente de una
      * factura al crédito, y descuenta el monto del registro
