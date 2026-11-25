@@ -14,10 +14,13 @@ return new class extends Migration
         Schema::create('accounts', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('account_number')->nullable()->unique();
+            $table->string('account_number')->nullable();
             $table->decimal('amount', 12, 2)->default(0);
             $table->text('description')->nullable();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->timestamps();
+
+            $table->unique(['user_id', 'account_number']);
         });
     }
 

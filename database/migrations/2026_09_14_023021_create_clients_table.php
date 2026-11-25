@@ -13,12 +13,16 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
-            $table->string('dni', 8)->nullable()->unique();
+            $table->string('dni', 8)->nullable();
             $table->string('name');
-            $table->string('ruc', 11)->nullable()->unique();
+            $table->string('ruc', 11)->nullable();
             $table->string('phone', 20)->nullable();
             $table->string('address')->nullable();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->timestamps();
+
+            $table->unique(['user_id', 'dni']);
+            $table->unique(['user_id', 'ruc']);
         });
     }
 

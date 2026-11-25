@@ -18,6 +18,7 @@ return new class extends Migration
             $table->dateTime('movement_date');
             $table->foreignId('product_id')->constrained()->restrictOnDelete();
             $table->foreignId('biller_id')->nullable()->constrained()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->timestamps();
         });
     }

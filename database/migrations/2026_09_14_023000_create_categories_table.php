@@ -12,10 +12,13 @@ return new class extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('name');
             $table->enum('type', CategoryType::values());
             $table->enum('status', CategoryStatus::values())->default(CategoryStatus::Activo->value);
+            $table->foreignId('user_id')->nullable()->constrained()->restrictOnDelete();
             $table->timestamps();
+
+            $table->unique(['user_id', 'name']);
         });
     }
 

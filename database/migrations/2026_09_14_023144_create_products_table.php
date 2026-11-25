@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('percentage_general', 5, 2)->default(0);
             $table->decimal('price_general', 10, 2)->default(0);
             $table->decimal('stock', 10, 2)->default(0);
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->timestamps();
         });
     }

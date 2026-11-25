@@ -14,13 +14,15 @@ return new class extends Migration
         Schema::create('billers', function (Blueprint $table) {
             $table->id();
             $table->date('sale_date');
-            $table->date('payment_date')->nullable();
+            $table->timestamp('paid_at')->nullable();
+            $table->date('due_date')->nullable();
             $table->enum('sale_type', ['contado', 'credito']);
             $table->decimal('subtotal', 10, 2);
-            $table->decimal('igv', 10, 2);
+            $table->decimal('igv_amount', 10, 2)->default(0);
             $table->decimal('igv_percentage', 5, 2)->nullable();
             $table->decimal('total', 10, 2);
             $table->foreignId('client_id')->constrained()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->restrictOnDelete();
             $table->foreignId('account_id')->nullable()->constrained()->restrictOnDelete();
             $table->timestamps();
         });

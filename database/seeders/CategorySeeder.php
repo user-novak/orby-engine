@@ -16,22 +16,28 @@ class CategorySeeder extends Seeder
                 'name' => Category::SALES_NAME,
                 'type' => CategoryType::Ingreso,
                 'status' => CategoryStatus::Activo,
+                'user_id' => null,
             ],
             [
                 'name' => Category::SERVICE_PAYMENT_NAME,
                 'type' => CategoryType::Egreso,
                 'status' => CategoryStatus::Activo,
+                'user_id' => null,
             ],
             [
                 'name' => Category::UNFORESEEN_NAME,
                 'type' => CategoryType::Ambos,
                 'status' => CategoryStatus::Activo,
+                'user_id' => null,
             ],
         ];
 
         foreach ($categories as $category) {
             Category::query()->updateOrCreate(
-                ['name' => $category['name']],
+                [
+                    'name' => $category['name'],
+                    'user_id' => null,
+                ],
                 $category,
             );
         }
