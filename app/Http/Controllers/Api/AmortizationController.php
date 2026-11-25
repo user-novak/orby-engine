@@ -23,7 +23,11 @@ class AmortizationController extends Controller
 
     public function __invoke(StoreAmortizationRequest $request, Biller $biller): AccountMovementResource
     {
-        $amortization = $this->accountMovements->registerAmortization($biller, $request->validated());
+        $amortization = $this->accountMovements->registerAmortization(
+            $request->user(),
+            $biller,
+            $request->validated(),
+        );
 
         return AccountMovementResource::make($amortization);
     }

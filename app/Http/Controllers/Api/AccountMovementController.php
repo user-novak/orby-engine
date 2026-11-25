@@ -30,6 +30,7 @@ class AccountMovementController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $movements = AccountMovement::query()
+            ->where('user_id', $request->user()->id)
             ->with(['account', 'category'])
             ->when(
                 $request->filled('account_id'),
@@ -59,7 +60,10 @@ class AccountMovementController extends Controller
 
     public function store(StoreAccountMovementRequest $request): AccountMovementResource
     {
-        $movement = $this->accountMovements->registerManual($request->validated());
+        $movement = $this->accountMovements->registerManual(
+            $request->user(),
+            $request->validated(),
+        );
 
         return AccountMovementResource::make($movement->load(['account', 'category']));
     }
@@ -68,7 +72,11 @@ class AccountMovementController extends Controller
         StoreAccountPaymentRequest $request,
         AccountMovement $accountMovement,
     ): AccountMovementResource {
-        $payment = $this->accountMovements->registerPayment($accountMovement, $request->validated());
+        $payment = $this->accountMovements->registerPayment(
+            $request->user(),
+            $accountMovement,
+            $request->validated(),
+        );
 
         return AccountMovementResource::make($payment->load(['account', 'category']));
     }
@@ -78,6 +86,7 @@ class AccountMovementController extends Controller
         AccountMovement $accountMovement,
     ): AccountMovementResource {
         $collection = $this->accountMovements->registerCollection(
+            $request->user(),
             $accountMovement,
             $request->validated(),
         );
@@ -85,8 +94,10 @@ class AccountMovementController extends Controller
         return AccountMovementResource::make($collection->load(['account', 'category']));
     }
 
-    public function show(AccountMovement $accountMovement): AccountMovementResource
+    public function show(Request $request, AccountMovement $accountMovement): AccountMovementResource
     {
+        abort_unless($accountMovement->user_id === $request->user()->id, 404);
+
         return AccountMovementResource::make($accountMovement->load(['account', 'category']));
     }
 }

@@ -3,15 +3,16 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 class ProductService
 {
-    public function create(array $data): Product
+    public function create(User $user, array $data): Product
     {
         $this->validatePrices(null, $data);
 
-        return Product::create($data);
+        return $user->products()->create($data);
     }
 
     public function update(Product $product, array $data): Product

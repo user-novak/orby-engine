@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Models\Account;
+use App\Models\User;
 
 class AccountService
 {
-    public function create(array $data): Account
+    public function create(User $user, array $data): Account
     {
-        return Account::create($data);
+        return $user->accounts()->create($data);
     }
 
     public function update(Account $account, array $data): Account

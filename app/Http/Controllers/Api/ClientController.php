@@ -9,6 +9,7 @@ use App\Http\Resources\ClientResource;
 use App\Models\Client;
 use App\Services\ClientService;
 use Illuminate\Http\Response;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use App\Http\Controllers\Controller;
 
@@ -22,6 +23,7 @@ class ClientController extends Controller
     {
         return ClientResource::collection(
         Client::query()
+            ->where('user_id', $request->user()->id)
             ->latest()
             ->latest('id')
             ->paginate($request->integer('per_page', 15))
@@ -30,13 +32,15 @@ class ClientController extends Controller
 
     public function store(StoreClientRequest $request): ClientResource
     {
-        $client = $this->clients->create($request->validated());
+        $client = $this->clients->create($request->user(), $request->validated());
 
         return ClientResource::make($client);
     }
 
-    public function show(Client $client): ClientResource
+    public function show(Request $request, Client $client): ClientResource
     {
+        abort_unless($client->user_id === $request->user()->id, 404);
+
         return ClientResource::make($client);
     }
 
@@ -47,8 +51,10 @@ class ClientController extends Controller
         return ClientResource::make($client);
     }
 
-    public function destroy(Client $client): Response
+    public function destroy(Request $request, Client $client): Response
     {
+        abort_unless($client->user_id === $request->user()->id, 404);
+
         $this->clients->delete($client);
 
         return response()->noContent();

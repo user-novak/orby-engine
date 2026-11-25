@@ -16,6 +16,7 @@ class StockMovementResource extends JsonResource
             'movement_date' => $this->movement_date,
             'product_id' => $this->product_id,
             'biller_id' => $this->biller_id,
+            'user_id' => $this->user_id,
             // Solo se incluye si el controller hizo ->load('product') o ->with('product').
             // Evita el problema N+1 de cargar la relación en cada fila "por si acaso".
             'product' => ProductResource::make($this->whenLoaded('product')),

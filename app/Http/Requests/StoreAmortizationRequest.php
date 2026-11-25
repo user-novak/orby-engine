@@ -5,18 +5,26 @@ namespace App\Http\Requests;
 use App\Models\Biller;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAmortizationRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $biller = $this->route('biller');
+
+        return $biller instanceof Biller
+            && $biller->user_id === $this->user()->id;
     }
 
     public function rules(): array
     {
         return [
-            'account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'account_id' => [
+                'required',
+                'integer',
+                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
+            ],
             'description' => ['nullable', 'string'],
             'amount' => [
                 'required',

@@ -11,14 +11,16 @@ class Biller extends Model
 {
     protected $fillable = [
         'sale_date',
-        'payment_date',
+        'paid_at',
+        'due_date',
         'sale_type',
         'subtotal',
-        'igv',
+        'igv_amount',
         'igv_percentage',
         'total',
         'client_id',
         'account_id',
+        'user_id',
     ];
 
     /**
@@ -28,12 +30,18 @@ class Biller extends Model
     {
         return [
             'sale_date' => 'date',
-            'payment_date' => 'date',
+            'paid_at' => 'datetime',
+            'due_date' => 'date',
             'subtotal' => 'decimal:2',
-            'igv' => 'decimal:2',
+            'igv_amount' => 'decimal:2',
             'igv_percentage' => 'decimal:2',
             'total' => 'decimal:2',
         ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

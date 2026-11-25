@@ -31,13 +31,18 @@ class StoreAccountMovementRequest extends FormRequest
                 Rule::exists('categories', 'id')->where(function (Builder $query) {
                     $query
                         ->where('status', CategoryStatus::Activo->value)
-                        ->whereIn('type', [$this->input('type'), CategoryType::Ambos->value]);
+                        ->whereIn('type', [$this->input('type'), CategoryType::Ambos->value])
+                        ->where(function (Builder $owner) {
+                            $owner
+                                ->whereNull('user_id')
+                                ->orWhere('user_id', $this->user()->id);
+                        });
                 }),
             ],
             'account_id' => [
                 'nullable',
                 'integer',
-                'exists:accounts,id',
+                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
                 Rule::requiredIf(fn () => in_array($this->input('status'), $this->settledStatuses(), true)),
                 Rule::prohibitedIf(fn () => in_array($this->input('status'), $this->futureStatuses(), true)),
             ],

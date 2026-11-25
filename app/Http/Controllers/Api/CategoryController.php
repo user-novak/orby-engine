@@ -10,6 +10,7 @@ use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use App\Services\CategoryService;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
@@ -20,6 +21,11 @@ class CategoryController extends Controller
     public function index(IndexCategoryRequest $request): AnonymousResourceCollection
     {
         $categories = Category::query()
+            ->where(function ($query) use ($request) {
+                $query
+                    ->whereNull('user_id')
+                    ->orWhere('user_id', $request->user()->id);
+            })
             ->when(
                 $request->filled('type'),
                 fn ($query) => $query->where('type', $request->string('type'))
@@ -37,7 +43,7 @@ class CategoryController extends Controller
 
     public function store(StoreCategoryRequest $request): CategoryResource
     {
-        $category = $this->categories->create($request->validated());
+        $category = $this->categories->create($request->user(), $request->validated());
 
         return CategoryResource::make($category);
     }
@@ -52,8 +58,13 @@ class CategoryController extends Controller
         );
     }
 
-    public function show(Category $category): CategoryResource
+    public function show(Request $request, Category $category): CategoryResource
     {
+        abort_unless(
+            $category->user_id === null || $category->user_id === $request->user()->id,
+            404,
+        );
+
         return CategoryResource::make($category);
     }
 

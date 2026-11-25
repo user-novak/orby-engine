@@ -26,6 +26,7 @@ class AccountMovementObserver
 
         DB::transaction(function () use ($accountMovement, $sign) {
             $account = Account::whereKey($accountMovement->account_id)
+                ->where('user_id', $accountMovement->user_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 

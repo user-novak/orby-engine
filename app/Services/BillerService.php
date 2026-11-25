@@ -8,11 +8,14 @@ use App\Enums\PriceTier;
 use App\Enums\SaleType;
 use App\Enums\StockMovementType;
 use App\Models\AccountMovement;
+use App\Models\Account;
 use App\Models\Biller;
 use App\Models\BillerItem;
 use App\Models\Category;
+use App\Models\Client;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -28,23 +31,24 @@ class BillerService
      * crédito. Todo en una sola transacción — si algo falla a mitad de
      * camino (ej. stock insuficiente), no queda nada a medio crear.
      */
-    public function create(array $data): Biller
+    public function create(User $user, array $data): Biller
     {
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($user, $data) {
             $saleType = $this->normalizeSaleType($data['sale_type']);
+            $this->assertRelationsBelongToUser($user, $data);
 
             // lockForUpdate en resolveLines() bloquea las filas de producto
             // involucradas hasta que termine la transacción: si dos ventas
             // del mismo producto llegan casi al mismo tiempo, la segunda
             // espera a que la primera termine de descontar stock, en vez de
             // que ambas lean el mismo stock "viejo" y lo dejen negativo.
-            $lines = $this->resolveLines($data['items']);
+            $lines = $this->resolveLines($user, $data['items']);
             $this->assertStockIsAvailable($lines);
 
             $this->assertAmountsAreValid($data, $lines);
 
             $subtotal = (float) $data['subtotal'];
-            $igv = (float) ($data['igv'] ?? 0);
+            $igvAmount = (float) $data['igv_amount'];
             $total = (float) $data['total'];
             $salesCategoryId = Category::salesId();
 
@@ -52,14 +56,17 @@ class BillerService
 
             $biller = Biller::create([
                 'sale_date' => $data['sale_date'],
-                'payment_date' => $data['payment_date']
-                    ?? ($saleType === SaleType::Contado ? $data['sale_date'] : null),
+                'paid_at' => $saleType === SaleType::Contado ? $data['sale_date'] : null,
+                'due_date' => $saleType === SaleType::Credito
+                    ? ($data['due_date'] ?? null)
+                    : null,
                 'sale_type' => $saleType,
                 'subtotal' => $subtotal,
-                'igv' => $igv,
+                'igv_amount' => $igvAmount,
                 'igv_percentage' => $data['igv_percentage'] ?? null,
                 'total' => $total,
                 'client_id' => $data['client_id'],
+                'user_id' => $user->id,
                 // Solo se guarda aquí en 'contado' (una sola cuenta, un solo
                 // pago, inmediato). En 'credito' la cuenta vive por cada
                 // AccountMovement (pueden ser cuentas distintas en cada
@@ -87,12 +94,19 @@ class BillerService
      * real (bloqueado con lockForUpdate), su unit_price según el price_tier
      * de esa línea, y el subtotal ya calculado.
      */
-    private function resolveLines(array $items): array
+    private function resolveLines(User $user, array $items): array
     {
-        $products = Product::whereIn('id', array_column($items, 'product_id'))
+        $products = Product::where('user_id', $user->id)
+            ->whereIn('id', array_column($items, 'product_id'))
             ->lockForUpdate()
             ->get()
             ->keyBy('id');
+
+        if ($products->count() !== count(array_unique(array_column($items, 'product_id')))) {
+            throw ValidationException::withMessages([
+                'items' => 'Uno o más productos no pertenecen al usuario autenticado.',
+            ]);
+        }
 
         return array_map(function (array $item, int $index) use ($products) {
             /** @var Product $product */
@@ -161,8 +175,8 @@ class BillerService
             $errors['subtotal'] = "El subtotal debe ser {$expectedSubtotal}.";
         }
 
-        if (round((float) ($data['igv'] ?? 0), 2) !== $expectedIgv) {
-            $errors['igv'] = "El IGV debe ser {$expectedIgv}.";
+        if (round((float) $data['igv_amount'], 2) !== $expectedIgv) {
+            $errors['igv_amount'] = "El IGV debe ser {$expectedIgv}.";
         }
 
         if (round((float) $data['total'], 2) !== $expectedTotal) {
@@ -179,6 +193,24 @@ class BillerService
         if ($saleType === SaleType::Credito && ! empty($data['initial_payment']) && $data['initial_payment'] > $total) {
             throw ValidationException::withMessages([
                 'initial_payment' => "El pago inicial no puede superar el total de la venta ({$total}).",
+            ]);
+        }
+    }
+
+    private function assertRelationsBelongToUser(User $user, array $data): void
+    {
+        if (! Client::query()->whereKey($data['client_id'])->where('user_id', $user->id)->exists()) {
+            throw ValidationException::withMessages([
+                'client_id' => 'El cliente no pertenece al usuario autenticado.',
+            ]);
+        }
+
+        if (
+            isset($data['account_id'])
+            && ! Account::query()->whereKey($data['account_id'])->where('user_id', $user->id)->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'account_id' => 'La cuenta no pertenece al usuario autenticado.',
             ]);
         }
     }
@@ -204,6 +236,7 @@ class BillerService
                 'movement_date' => now(),
                 'product_id' => $line['product']->id,
                 'biller_id' => $biller->id,
+                'user_id' => $biller->user_id,
             ]);
         }
     }
@@ -219,6 +252,7 @@ class BillerService
             'category_id' => $categoryId,
             'account_id' => $accountId,
             'biller_id' => $biller->id,
+            'user_id' => $biller->user_id,
         ]);
     }
 
@@ -235,6 +269,7 @@ class BillerService
             'category_id' => $categoryId,
             'account_id' => null,
             'biller_id' => $biller->id,
+            'user_id' => $biller->user_id,
         ]);
 
         // Si mandaron un pago inicial, reutilizamos EXACTAMENTE la misma
@@ -243,7 +278,7 @@ class BillerService
         // el registro 'cuenta_por_cobrar' que acabamos de crear (mismo id
         // de transacción, así que ya es visible) y descuenta este pago.
         if (! empty($data['initial_payment'])) {
-            $this->accountMovements->registerAmortization($biller, [
+            $this->accountMovements->registerAmortization($biller->user, $biller, [
                 'account_id' => $data['account_id'],
                 'amount' => $data['initial_payment'],
                 'description' => 'Pago inicial al momento de la venta',

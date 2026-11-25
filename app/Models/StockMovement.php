@@ -13,6 +13,7 @@ class StockMovement extends Model
         'movement_date',
         'product_id',
         'biller_id',
+        'user_id',
     ];
 
     /**
@@ -24,6 +25,11 @@ class StockMovement extends Model
             'quantity' => 'decimal:2',
             'movement_date' => 'datetime',
         ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function product(): BelongsTo

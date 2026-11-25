@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreStockMovementRequest extends FormRequest
 {
@@ -15,7 +16,11 @@ class StoreStockMovementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'product_id' => [
+                'required',
+                'integer',
+                Rule::exists('products', 'id')->where('user_id', $this->user()->id),
+            ],
             'quantity' => ['required', 'numeric', 'min:0.01'],
             // Opcional: si no la mandan, el Service usa "ahora".
             'movement_date' => ['nullable', 'date'],

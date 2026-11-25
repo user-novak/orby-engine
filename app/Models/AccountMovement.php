@@ -16,6 +16,7 @@ class AccountMovement extends Model
         'category_id',
         'account_id',
         'biller_id',
+        'user_id',
     ];
 
     /**
@@ -27,6 +28,11 @@ class AccountMovement extends Model
             'amount' => 'decimal:2',
             'movement_date' => 'datetime',
         ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**

@@ -7,18 +7,26 @@ use App\Enums\AccountMovementType;
 use App\Models\AccountMovement;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAccountCollectionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $movement = $this->route('accountMovement');
+
+        return $movement instanceof AccountMovement
+            && $movement->user_id === $this->user()->id;
     }
 
     public function rules(): array
     {
         return [
-            'account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'account_id' => [
+                'required',
+                'integer',
+                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
+            ],
             'description' => ['nullable', 'string'],
             'amount' => [
                 'required',

@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Models\Client;
+use App\Models\User;
 
 class ClientService
 {
-    public function create(array $data): Client
+    public function create(User $user, array $data): Client
     {
-        return Client::create($data);
+        return $user->clients()->create($data);
     }
 
     public function update(Client $client, array $data): Client

@@ -22,6 +22,7 @@ class ProductResource extends JsonResource
             'percentage_general' => $this->percentage_general,
             'price_general' => $this->price_general,
             'stock' => $this->stock,
+            'user_id' => $this->user_id,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

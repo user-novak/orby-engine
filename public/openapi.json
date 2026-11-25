@@ -1711,13 +1711,21 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Nombre único de la categoría."
+            "description": "Nombre único entre las categorías globales y las del usuario autenticado."
           },
           "type": {
             "$ref": "#/components/schemas/CategoryType"
           },
           "status": {
             "$ref": "#/components/schemas/CategoryStatus"
+          },
+          "user_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "description": "Propietario de la categoría. Es null para categorías globales."
           },
           "created_at": {
             "$ref": "#/components/schemas/Timestamp"
@@ -1731,6 +1739,7 @@
           "name",
           "type",
           "status",
+          "user_id",
           "created_at",
           "updated_at"
         ]
@@ -1801,6 +1810,11 @@
               "Av. Principal 123"
             ]
           },
+          "user_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Usuario propietario del cliente."
+          },
           "created_at": {
             "$ref": "#/components/schemas/Timestamp"
           },
@@ -1815,6 +1829,7 @@
           "ruc",
           "phone",
           "address",
+          "user_id",
           "created_at",
           "updated_at"
         ]
@@ -1847,7 +1862,7 @@
               "null"
             ],
             "maxLength": 50,
-            "description": "Número o código único de la cuenta.",
+            "description": "Número o código único dentro del usuario autenticado.",
             "examples": [
               "CAJA-001"
             ]
@@ -1865,6 +1880,11 @@
               "Efectivo disponible"
             ]
           },
+          "user_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Usuario propietario de la cuenta."
+          },
           "created_at": {
             "$ref": "#/components/schemas/Timestamp"
           },
@@ -1878,6 +1898,7 @@
           "account_number",
           "amount",
           "description",
+          "user_id",
           "created_at",
           "updated_at"
         ]
@@ -1987,6 +2008,11 @@
               "100.00"
             ]
           },
+          "user_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Usuario propietario del producto."
+          },
           "created_at": {
             "$ref": "#/components/schemas/Timestamp"
           },
@@ -2007,6 +2033,7 @@
           "percentage_general",
           "price_general",
           "stock",
+          "user_id",
           "created_at",
           "updated_at"
         ]
@@ -2171,6 +2198,11 @@
               1
             ]
           },
+          "user_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Usuario propietario del movimiento."
+          },
           "account": {
             "$ref": "#/components/schemas/Account"
           },
@@ -2187,7 +2219,8 @@
           "description",
           "category_id",
           "account_id",
-          "biller_id"
+          "biller_id",
+          "user_id"
         ]
       },
       "Biller": {
@@ -2212,16 +2245,24 @@
               "2026-10-20T15:30:00.000000Z"
             ]
           },
-          "payment_date": {
+          "paid_at": {
             "type": [
               "string",
               "null"
             ],
             "format": "date-time",
-            "description": "Fecha de pago. En ventas al contado se toma la fecha de venta; puede ser nula en ventas al crédito.",
+            "description": "Fecha real en la que la venta quedó completamente pagada.",
             "examples": [
               "2026-10-20T00:00:00.000000Z"
             ]
+          },
+          "due_date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Fecha esperada de pago para una venta al crédito. Es null en ventas al contado."
           },
           "sale_type": {
             "$ref": "#/components/schemas/SaleType"
@@ -2234,13 +2275,21 @@
               "100.00"
             ]
           },
-          "igv": {
+          "igv_amount": {
             "type": "string",
             "pattern": "^-?\\d+\\.\\d{2}$",
-            "description": "IGV calculado al 18 %.",
+            "description": "Monto de IGV calculado con el porcentaje registrado.",
             "examples": [
               "18.00"
             ]
+          },
+          "igv_percentage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^-?\\d+\\.\\d{2}$",
+            "description": "Porcentaje de IGV aplicado."
           },
           "total": {
             "type": "string",
@@ -2269,6 +2318,11 @@
               1
             ]
           },
+          "user_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Usuario propietario de la venta."
+          },
           "client": {
             "$ref": "#/components/schemas/Client"
           },
@@ -2293,13 +2347,16 @@
         "required": [
           "id",
           "sale_date",
-          "payment_date",
+          "paid_at",
+          "due_date",
           "sale_type",
           "subtotal",
-          "igv",
+          "igv_amount",
+          "igv_percentage",
           "total",
           "client_id",
           "account_id",
+          "user_id",
           "created_at"
         ]
       },
@@ -2350,6 +2407,11 @@
               1
             ]
           },
+          "user_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Usuario propietario del movimiento."
+          },
           "product": {
             "$ref": "#/components/schemas/Product"
           },
@@ -2364,6 +2426,7 @@
           "movement_date",
           "product_id",
           "biller_id",
+          "user_id",
           "created_at"
         ]
       },
@@ -2375,7 +2438,7 @@
           "name": {
             "type": "string",
             "maxLength": 255,
-            "description": "Nombre único de la categoría."
+            "description": "Nombre único entre las categorías globales y las del usuario autenticado."
           },
           "type": {
             "$ref": "#/components/schemas/CategoryType"
@@ -2847,13 +2910,13 @@
               "2026-10-20"
             ]
           },
-          "payment_date": {
+          "due_date": {
             "type": [
               "string",
               "null"
             ],
             "format": "date",
-            "description": "Opcional. Debe ser igual o posterior a `sale_date`. En contado, si se omite, se usa `sale_date`.",
+            "description": "Opcional para crédito. Debe ser igual o posterior a sale_date y no se admite en contado.",
             "examples": [
               "2026-11-20"
             ]
@@ -2880,6 +2943,26 @@
               50
             ]
           },
+          "subtotal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "igv_amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "igv_percentage": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 100
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0
+          },
           "items": {
             "type": "array",
             "minItems": 1,
@@ -2893,6 +2976,9 @@
           "client_id",
           "sale_type",
           "sale_date",
+          "subtotal",
+          "igv_amount",
+          "total",
           "items"
         ],
         "allOf": [

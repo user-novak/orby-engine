@@ -24,6 +24,7 @@ class StockMovementController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $movements = StockMovement::query()
+            ->where('user_id', $request->user()->id)
             ->with('product')
             ->when(
                 $request->filled('product_id'),
@@ -39,8 +40,10 @@ class StockMovementController extends Controller
         return StockMovementResource::collection($movements);
     }
 
-    public function show(StockMovement $stockMovement): StockMovementResource
+    public function show(Request $request, StockMovement $stockMovement): StockMovementResource
     {
+        abort_unless($stockMovement->user_id === $request->user()->id, 404);
+
         return StockMovementResource::make($stockMovement->load('product'));
     }
 
@@ -51,7 +54,10 @@ class StockMovementController extends Controller
      */
     public function store(StoreStockMovementRequest $request): StockMovementResource
     {
-        $stockMovement = $this->stockMovements->registerManualEntry($request->validated());
+        $stockMovement = $this->stockMovements->registerManualEntry(
+            $request->user(),
+            $request->validated(),
+        );
 
         return StockMovementResource::make($stockMovement);
     }

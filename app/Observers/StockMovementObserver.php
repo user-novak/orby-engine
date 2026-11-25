@@ -33,6 +33,7 @@ class StockMovementObserver
     {
         DB::transaction(function () use ($stockMovement, $sign) {
             $product = Product::whereKey($stockMovement->product_id)
+                ->where('user_id', $stockMovement->user_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 

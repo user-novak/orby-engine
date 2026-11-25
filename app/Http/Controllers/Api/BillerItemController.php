@@ -21,6 +21,10 @@ class BillerItemController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $items = BillerItem::query()
+            ->whereHas(
+                'biller',
+                fn ($query) => $query->where('user_id', $request->user()->id)
+            )
             ->with('product')
             ->when(
                 $request->filled('biller_id'),
@@ -36,8 +40,10 @@ class BillerItemController extends Controller
         return BillerItemResource::collection($items);
     }
 
-    public function show(BillerItem $billerItem): BillerItemResource
+    public function show(Request $request, BillerItem $billerItem): BillerItemResource
     {
+        abort_unless($billerItem->biller()->where('user_id', $request->user()->id)->exists(), 404);
+
         return BillerItemResource::make($billerItem->load('product'));
     }
 }

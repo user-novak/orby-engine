@@ -19,6 +19,7 @@ class AccountMovementResource extends JsonResource
             'category_id' => $this->category_id,
             'account_id' => $this->account_id,
             'biller_id' => $this->biller_id,
+            'user_id' => $this->user_id,
             'account' => AccountResource::make($this->whenLoaded('account')),
             'category' => CategoryResource::make($this->whenLoaded('category')),
         ];

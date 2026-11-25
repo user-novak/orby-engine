@@ -5,15 +5,23 @@ namespace App\Services;
 use App\Enums\AccountMovementStatus;
 use App\Enums\AccountMovementType;
 use App\Models\AccountMovement;
+use App\Models\Account;
 use App\Models\Biller;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AccountMovementService
 {
-    public function registerManual(array $data): AccountMovement
+    public function registerManual(User $user, array $data): AccountMovement
     {
+        $this->assertCategoryIsAvailable($user, $data['category_id']);
+
+        if (isset($data['account_id'])) {
+            $this->assertAccountBelongsToUser($user, $data['account_id']);
+        }
+
         return DB::transaction(fn () => AccountMovement::create([
             'amount' => $data['amount'],
             'movement_date' => $data['movement_date'],
@@ -23,13 +31,21 @@ class AccountMovementService
             'category_id' => $data['category_id'],
             'account_id' => $data['account_id'] ?? null,
             'biller_id' => null,
+            'user_id' => $user->id,
         ]));
     }
 
-    public function registerPayment(AccountMovement $accountMovement, array $data): AccountMovement
+    public function registerPayment(
+        User $user,
+        AccountMovement $accountMovement,
+        array $data,
+    ): AccountMovement
     {
-        return DB::transaction(function () use ($accountMovement, $data) {
+        $this->assertAccountBelongsToUser($user, $data['account_id']);
+
+        return DB::transaction(function () use ($user, $accountMovement, $data) {
             $pending = AccountMovement::whereKey($accountMovement->id)
+                ->where('user_id', $user->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -57,6 +73,7 @@ class AccountMovementService
                 'category_id' => $pending->category_id,
                 'account_id' => $data['account_id'],
                 'biller_id' => $pending->biller_id,
+                'user_id' => $user->id,
             ]);
 
             $remaining = round((float) $pending->amount - (float) $data['amount'], 2);
@@ -72,10 +89,17 @@ class AccountMovementService
         });
     }
 
-    public function registerCollection(AccountMovement $accountMovement, array $data): AccountMovement
+    public function registerCollection(
+        User $user,
+        AccountMovement $accountMovement,
+        array $data,
+    ): AccountMovement
     {
-        return DB::transaction(function () use ($accountMovement, $data) {
+        $this->assertAccountBelongsToUser($user, $data['account_id']);
+
+        return DB::transaction(function () use ($user, $accountMovement, $data) {
             $pending = AccountMovement::whereKey($accountMovement->id)
+                ->where('user_id', $user->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
@@ -103,6 +127,7 @@ class AccountMovementService
                 'category_id' => $pending->category_id,
                 'account_id' => $data['account_id'],
                 'biller_id' => $pending->biller_id,
+                'user_id' => $user->id,
             ]);
 
             $remaining = round((float) $pending->amount - (float) $data['amount'], 2);
@@ -113,6 +138,13 @@ class AccountMovementService
                     ? AccountMovementStatus::CuentaCobrada
                     : AccountMovementStatus::CuentaPorCobrar,
             ]);
+
+            if ($remaining <= 0 && $pending->biller_id !== null) {
+                Biller::query()
+                    ->whereKey($pending->biller_id)
+                    ->where('user_id', $user->id)
+                    ->update(['paid_at' => now()]);
+            }
 
             return $collection;
         });
@@ -132,10 +164,13 @@ class AccountMovementService
      * La validación de "el monto no puede superar la deuda" ya se hizo en
      * StoreAmortizationRequest, así que aquí asumimos que $data es válido.
      */
-    public function registerAmortization(Biller $biller, array $data): AccountMovement
+    public function registerAmortization(User $user, Biller $biller, array $data): AccountMovement
     {
-        return DB::transaction(function () use ($biller, $data) {
+        $this->assertAccountBelongsToUser($user, $data['account_id']);
+
+        return DB::transaction(function () use ($user, $biller, $data) {
             $pending = AccountMovement::where('biller_id', $biller->id)
+                ->where('user_id', $user->id)
                 ->where('status', AccountMovementStatus::CuentaPorCobrar)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -149,6 +184,7 @@ class AccountMovementService
                 'category_id' => Category::salesId(),
                 'account_id' => $data['account_id'],
                 'biller_id' => $biller->id,
+                'user_id' => $user->id,
             ]);
 
             $remaining = round($pending->amount - $data['amount'], 2);
@@ -158,7 +194,43 @@ class AccountMovementService
                 'status' => $remaining <= 0 ? AccountMovementStatus::CuentaCobrada : AccountMovementStatus::CuentaPorCobrar,
             ]);
 
+            if ($remaining <= 0) {
+                $biller->update(['paid_at' => now()]);
+            }
+
             return $amortization;
         });
+    }
+
+    private function assertAccountBelongsToUser(User $user, int $accountId): void
+    {
+        $exists = Account::query()
+            ->whereKey($accountId)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if (! $exists) {
+            throw ValidationException::withMessages([
+                'account_id' => 'La cuenta no pertenece al usuario autenticado.',
+            ]);
+        }
+    }
+
+    private function assertCategoryIsAvailable(User $user, int $categoryId): void
+    {
+        $exists = Category::query()
+            ->whereKey($categoryId)
+            ->where(function ($query) use ($user) {
+                $query
+                    ->whereNull('user_id')
+                    ->orWhere('user_id', $user->id);
+            })
+            ->exists();
+
+        if (! $exists) {
+            throw ValidationException::withMessages([
+                'category_id' => 'La categoría no está disponible para el usuario autenticado.',
+            ]);
+        }
     }
 }

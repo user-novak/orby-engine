@@ -9,7 +9,7 @@ class UpdateAccountRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->account->user_id === $this->user()->id;
     }
 
     public function rules(): array
@@ -21,7 +21,9 @@ class UpdateAccountRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('accounts', 'account_number')->ignore($this->account),
+                Rule::unique('accounts', 'account_number')
+                    ->where('user_id', $this->user()->id)
+                    ->ignore($this->account),
             ],
             'description' => ['sometimes', 'nullable', 'string'],
             // 'amount' NO tiene regla aquí a propósito: el saldo se ajusta únicamente

@@ -9,7 +9,7 @@ class UpdateClientRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->client->user_id === $this->user()->id;
     }
 
     public function rules(): array
@@ -21,9 +21,25 @@ class UpdateClientRequest extends FormRequest
             // ya existe en BD sin una regla custom que consulte el registro actual. Si te
             // importa impedir que un update deje a un cliente sin dni Y sin ruc, dímelo y
             // te agrego una regla que valide contra $this->client->dni / ->ruc.
-            'dni' => ['sometimes', 'nullable', 'string', 'max:8', Rule::unique('clients', 'dni')->ignore($this->client)],
+            'dni' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:8',
+                Rule::unique('clients', 'dni')
+                    ->where('user_id', $this->user()->id)
+                    ->ignore($this->client),
+            ],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'ruc' => ['sometimes', 'nullable', 'string', 'max:11', Rule::unique('clients', 'ruc')->ignore($this->client)],
+            'ruc' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:11',
+                Rule::unique('clients', 'ruc')
+                    ->where('user_id', $this->user()->id)
+                    ->ignore($this->client),
+            ],
             'phone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'address' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];

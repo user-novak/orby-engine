@@ -25,9 +25,24 @@ class IndexBillerRequest extends FormRequest
                 'date',
                 Rule::when($this->filled('date_from'), ['after_or_equal:date_from']),
             ],
-            'client_id' => ['sometimes', 'nullable', 'integer', 'exists:clients,id'],
-            'account_id' => ['sometimes', 'nullable', 'integer', 'exists:accounts,id'],
-            'product_id' => ['sometimes', 'nullable', 'integer', 'exists:products,id'],
+            'client_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                Rule::exists('clients', 'id')->where('user_id', $this->user()->id),
+            ],
+            'account_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
+            ],
+            'product_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                Rule::exists('products', 'id')->where('user_id', $this->user()->id),
+            ],
             'sale_type' => ['sometimes', 'nullable', Rule::enum(SaleType::class)],
         ];
     }

@@ -20,17 +20,26 @@ class StoreBillerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'client_id' => ['required', 'integer', 'exists:clients,id'],
+            'client_id' => [
+                'required',
+                'integer',
+                Rule::exists('clients', 'id')->where('user_id', $this->user()->id),
+            ],
             'sale_type' => ['required', Rule::enum(SaleType::class)],
             'sale_date' => ['required', 'date'],
-            'payment_date' => ['nullable', 'date', 'after_or_equal:sale_date'],
+            'due_date' => [
+                'nullable',
+                'date',
+                'after_or_equal:sale_date',
+                Rule::prohibitedIf(fn () => $this->input('sale_type') === SaleType::Contado->value),
+            ],
 
             // Obligatoria en 'contado' (ahí se paga todo de una); en
             // 'credito' solo si además mandan un pago inicial.
             'account_id' => [
                 'nullable',
                 'integer',
-                'exists:accounts,id',
+                Rule::exists('accounts', 'id')->where('user_id', $this->user()->id),
                 Rule::requiredIf(
                     fn () => $this->input('sale_type') === SaleType::Contado->value
                         || $this->filled('initial_payment')
@@ -47,14 +56,14 @@ class StoreBillerRequest extends FormRequest
             ],
 
             'subtotal' => ['required', 'numeric', 'min:0'],
-            'igv' => ['nullable', 'numeric', 'min:0'],
+            'igv_amount' => ['required', 'numeric', 'min:0'],
             'igv_percentage' => [
                 'nullable',
                 'numeric',
                 'min:0.01',
                 'max:100',
-                'required_with:igv',
-                'prohibited_without:igv',
+                Rule::requiredIf(fn () => (float) $this->input('igv_amount') > 0),
+                Rule::prohibitedIf(fn () => (float) $this->input('igv_amount') <= 0),
             ],
             'total' => ['required', 'numeric', 'min:0'],
 
@@ -62,7 +71,12 @@ class StoreBillerRequest extends FormRequest
             // 'distinct': no permitimos el mismo producto dos veces en una
             // misma venta (si se necesita más cantidad, se suma en un solo
             // item). Avísame si prefieres permitir líneas repetidas.
-            'items.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
+            'items.*.product_id' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('products', 'id')->where('user_id', $this->user()->id),
+            ],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.price_tier' => ['required', Rule::enum(PriceTier::class)],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
@@ -90,7 +104,11 @@ class StoreBillerRequest extends FormRequest
             }
 
             $productIds = array_column($items, 'product_id');
-            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+            $products = Product::query()
+                ->where('user_id', $this->user()->id)
+                ->whereIn('id', $productIds)
+                ->get()
+                ->keyBy('id');
 
             foreach ($items as $index => $item) {
                 $product = $products[$item['product_id'] ?? null] ?? null;

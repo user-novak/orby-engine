@@ -9,6 +9,7 @@ use App\Http\Resources\BillerResource;
 use App\Models\Biller;
 use App\Services\BillerService;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Request;
 
 class BillerController extends Controller
 {
@@ -19,6 +20,7 @@ class BillerController extends Controller
     public function index(IndexBillerRequest $request): AnonymousResourceCollection
     {
         $billers = Biller::query()
+            ->where('user_id', $request->user()->id)
             ->with('client')
             ->when(
                 $request->filled('date_from'),
@@ -56,13 +58,15 @@ class BillerController extends Controller
 
     public function store(StoreBillerRequest $request): BillerResource
     {
-        $biller = $this->billers->create($request->validated());
+        $biller = $this->billers->create($request->user(), $request->validated());
 
         return BillerResource::make($biller);
     }
 
-    public function show(Biller $biller): BillerResource
+    public function show(Request $request, Biller $biller): BillerResource
     {
+        abort_unless($biller->user_id === $request->user()->id, 404);
+
         return BillerResource::make(
             $biller->load(['client', 'account', 'items.product', 'accountMovements.account'])
         );
